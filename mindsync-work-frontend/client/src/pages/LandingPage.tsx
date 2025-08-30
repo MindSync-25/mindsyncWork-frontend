@@ -6,7 +6,7 @@ const LandingPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-    navigate('/get-started');
+    navigate('/account-type');
   };
 
   const handleScheduleDemo = () => {

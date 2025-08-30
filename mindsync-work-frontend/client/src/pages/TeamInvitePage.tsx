@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface TeamMember {
   id: string;
@@ -10,7 +10,7 @@ interface TeamMember {
 
 const TeamInvitePage: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  // const [searchParams] = useSearchParams();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
     { id: '1', email: '', role: 'member' },
     { id: '2', email: '', role: 'member' }

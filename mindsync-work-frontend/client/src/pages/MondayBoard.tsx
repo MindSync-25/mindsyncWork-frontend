@@ -31,8 +31,8 @@ interface MondayBoardProps {
 }
 
 const MondayBoard: React.FC<MondayBoardProps> = ({ 
-  boardName = 'My Board', 
-  template = 'custom',
+  boardName: _boardName = 'My Board', 
+  template: _template = 'custom',
   templateData,
   columns: templateColumns = []
 }) => {

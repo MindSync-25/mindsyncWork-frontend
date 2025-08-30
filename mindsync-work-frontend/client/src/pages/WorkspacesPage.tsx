@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { WorkspaceService } from '../services/workspaceService';
-import type { Workspace } from '../types/workspace';
+// import { WorkspaceService } from '../services/workspaceService';
+// import type { Workspace } from '../types/workspace';
 
 const WorkspacesPage: React.FC = () => {
   const navigate = useNavigate();
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  // const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [workspaces, setWorkspaces] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newWorkspace, setNewWorkspace] = useState({
@@ -23,8 +24,10 @@ const WorkspacesPage: React.FC = () => {
   const loadWorkspaces = async () => {
     setLoading(true);
     try {
-      const data = await WorkspaceService.getWorkspaces();
-      setWorkspaces(data);
+      // const data = await WorkspaceService.getWorkspaces();
+      // setWorkspaces(data);
+      // Temporary mock data
+      setWorkspaces([]);
     } catch (error) {
       console.error('Error loading workspaces:', error);
     } finally {
@@ -36,14 +39,15 @@ const WorkspacesPage: React.FC = () => {
     if (!newWorkspace.name.trim()) return;
 
     try {
-      const workspace = await WorkspaceService.createWorkspace({
-        name: newWorkspace.name.trim(),
-        description: newWorkspace.description.trim() || undefined,
-        color: newWorkspace.color,
-        icon: newWorkspace.icon
-      });
+      // const workspace = await WorkspaceService.createWorkspace({
+      //   name: newWorkspace.name.trim(),
+      //   description: newWorkspace.description.trim() || undefined,
+      //   color: newWorkspace.color,
+      //   icon: newWorkspace.icon
+      // });
 
-      setWorkspaces(prev => [...prev, workspace]);
+      // setWorkspaces(prev => [...prev, workspace]);
+      console.log('Creating workspace:', newWorkspace);
       setCreateModalOpen(false);
       setNewWorkspace({
         name: '',
@@ -53,7 +57,7 @@ const WorkspacesPage: React.FC = () => {
       });
       
       // Navigate to new workspace
-      navigate(`/workspace/${workspace.id}`);
+      // navigate(`/workspace/${workspace.id}`);
     } catch (error) {
       console.error('Error creating workspace:', error);
     }
@@ -72,7 +76,7 @@ const WorkspacesPage: React.FC = () => {
 
   const predefinedIcons = ['💼', '🏢', '🚀', '🎯', '💡', '⚡', '🔥', '⭐', '🌟', '🎨', '📊', '🔧'];
 
-  const WorkspaceCard = ({ workspace }: { workspace: Workspace }) => (
+  const WorkspaceCard = ({ workspace }: { workspace: any }) => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}

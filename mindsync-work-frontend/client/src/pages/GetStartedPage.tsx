@@ -1,325 +1,430 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const GetStartedPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { state, register, clearError } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Get account type from navigation state
+  const accountType = location.state?.accountType as 'PERSONAL' | 'ORGANIZATION';
+  
+  // Redirect to account type selection if no account type is provided
+  useEffect(() => {
+    if (!accountType) {
+      navigate('/account-type');
+    }
+  }, [accountType, navigate]);
   const [formData, setFormData] = useState({
     email: '',
     fullName: '',
     phone: '',
-    company: '',
-    password: ''
+    password: '',
+    confirmPassword: ''
   });
   
-  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({
+    email: '',
+    fullName: '',
+    phone: '',
+    password: '',
+    confirmPassword: ''
+  });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+    
+    // Clear error when user starts typing
+    if (errors[name as keyof typeof errors]) {
+      setErrors({
+        ...errors,
+        [name]: ''
+      });
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {
+      email: '',
+      fullName: '',
+      phone: '',
+      password: '',
+      confirmPassword: ''
+    };
+    let isValid = true;
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+      isValid = false;
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+      isValid = false;
+    }
+
+    // Full name validation
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Full name is required';
+      isValid = false;
+    }
+
+    // Password validation
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+      isValid = false;
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters long';
+      isValid = false;
+    }
+
+    // Confirm password validation
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+      isValid = false;
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    clearError();
     
-    // Simulate API call
-    setTimeout(() => {
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // Parse full name into first and last name
+      const nameParts = formData.fullName.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      // Call the registration API
+      await register({
+        email: formData.email.trim(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim() || 'User',
+        password: formData.password,
+        accountType: accountType
+      });
+      
+      // Registration successful, redirect based on account type
+      if (accountType === 'ORGANIZATION') {
+        navigate('/onboarding/user-details');
+      } else {
+        navigate('/onboarding/individual-setup');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      // Error will be displayed via the auth context state
+    } finally {
       setIsLoading(false);
-      // Navigate to onboarding page after successful signup
-      navigate('/onboarding');
-    }, 2000);
+    }
   };
 
-  const handleGoogleSignup = () => {
-    alert('Google signup integration coming soon!');
-  };
-
-  const handleGoBack = () => {
-    window.history.back();
-  };
-
-  const handleLogin = () => {
+  const handleLoginClick = () => {
     navigate('/login');
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-slate-800 to-cyan-800 flex">
-      
-      {/* Left Side - Form */}
-      <div className="flex-1 flex items-center justify-center p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800">
+      <div className="max-w-md mx-auto p-8">
+        {/* Header */}
         <motion.div 
-          className="w-full max-w-md"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
+          className="text-center mb-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          {/* Header */}
-          <div className="mb-8">
-            <motion.button
-              onClick={handleGoBack}
-              className="flex items-center text-gray-400 hover:text-cyan-400 transition-colors mb-6"
-              whileHover={{ x: -5 }}
-            >
-              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd"></path>
+          <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            {accountType === 'ORGANIZATION' ? (
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H5m5 0v-4a1 1 0 011-1h2a1 1 0 011 1v4m-3 0h2M7 7h3m3 0h3M7 11h3m3 0h3m-6 4h3" />
               </svg>
-              Back to Home
-            </motion.button>
-            
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold tracking-wide mb-2">
-                <span className="text-white">Mindsync</span> <span className="text-cyan-400">Work</span>
-              </h1>
-            </div>
+            ) : (
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            )}
+          </div>
+          
+          <h1 className="text-3xl font-bold text-white mb-2">
+            {accountType === 'ORGANIZATION' 
+              ? 'Create your organization workspace' 
+              : 'Create your personal workspace'
+            }
+          </h1>
+          <p className="text-gray-400">
+            {accountType === 'ORGANIZATION' 
+              ? 'Set up your team workspace and invite members'
+              : 'Get started with MindSync Work and organize your productivity'
+            }
+          </p>
+        </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
+        {/* Google Signup Button */}
+        <motion.button
+          className="w-full mb-6 px-6 py-3 bg-white hover:bg-gray-100 text-gray-900 font-semibold rounded-xl transition-all duration-300 flex items-center justify-center gap-3"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Continue with Google
+        </motion.button>
+
+        {/* Divider */}
+        <motion.div 
+          className="flex items-center mb-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+        >
+          <div className="flex-1 border-t border-gray-600"></div>
+          <span className="px-4 text-gray-400 text-sm">Or</span>
+          <div className="flex-1 border-t border-gray-600"></div>
+        </motion.div>
+
+        {/* Signup Form */}
+        <motion.form 
+          onSubmit={handleSubmit}
+          className="space-y-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+        >
+          {/* Error message */}
+          {state.error && (
+            <motion.div 
+              className="p-4 bg-red-900/20 border border-red-500/30 rounded-xl text-red-400 text-sm"
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
+              transition={{ duration: 0.3 }}
             >
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Welcome to <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Mindsync Work</span>
-              </h2>
-              <p className="text-gray-400 text-lg mb-8">
-                Get started - it's free. No credit card needed.
-              </p>
+              {state.error}
             </motion.div>
+          )}
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Email Address
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              className={`w-full px-4 py-3 bg-gray-800 border rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${
+                errors.email ? 'border-red-500' : 'border-gray-600'
+              }`}
+              placeholder="Enter your email"
+              disabled={isLoading}
+            />
+            {errors.email && (
+              <p className="mt-1 text-sm text-red-400">{errors.email}</p>
+            )}
           </div>
 
-          {/* Google Signup Button */}
-          <motion.button
-            onClick={handleGoogleSignup}
-            className="w-full flex items-center justify-center px-6 py-4 bg-white hover:bg-gray-50 border border-gray-300 rounded-xl text-gray-700 font-medium transition-all duration-300 mb-6 group"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-          >
-            <img 
-              src="https://dapulse-res.cloudinary.com/image/upload/remote_logos/995426/google-icon.svg" 
-              alt="Google" 
-              className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform"
+          {/* Full Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Full Name
+            </label>
+            <input
+              type="text"
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleInputChange}
+              className={`w-full px-4 py-3 bg-gray-800 border rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${
+                errors.fullName ? 'border-red-500' : 'border-gray-600'
+              }`}
+              placeholder="Enter your full name"
+              disabled={isLoading}
             />
-            Continue with Google
-          </motion.button>
+            {errors.fullName && (
+              <p className="mt-1 text-sm text-red-400">{errors.fullName}</p>
+            )}
+          </div>
 
-          {/* Divider */}
-          <motion.div 
-            className="flex items-center mb-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-          >
-            <div className="flex-1 border-t border-gray-600"></div>
-            <span className="px-4 text-gray-400 text-sm">Or</span>
-            <div className="flex-1 border-t border-gray-600"></div>
-          </motion.div>
+          {/* Phone (Optional) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Phone Number (Optional)
+            </label>
+            <input
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
+              placeholder="+1 (555) 123-4567"
+              disabled={isLoading}
+            />
+          </div>
 
-          {/* Signup Form */}
-          <motion.form 
-            onSubmit={handleSubmit}
-            className="space-y-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-          >
-            {/* Email Input */}
-            <div>
+          {/* Password */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Password
+            </label>
+            <div className="relative">
               <input
-                type="email"
-                name="email"
-                required
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="name@company.com"
-                className="w-full px-4 py-4 bg-gray-800/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
-                autoComplete="email"
-              />
-            </div>
-
-            {/* Full Name Input */}
-            <div>
-              <input
-                type="text"
-                name="fullName"
-                required
-                value={formData.fullName}
-                onChange={handleInputChange}
-                placeholder="Full Name"
-                className="w-full px-4 py-4 bg-gray-800/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
-              />
-            </div>
-
-            {/* Phone Number Input */}
-            <div>
-              <input
-                type="tel"
-                name="phone"
-                required
-                value={formData.phone}
-                onChange={handleInputChange}
-                placeholder="Phone Number"
-                className="w-full px-4 py-4 bg-gray-800/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
-                autoComplete="tel"
-              />
-            </div>
-
-            {/* Company Input */}
-            <div>
-              <input
-                type="text"
-                name="company"
-                required
-                value={formData.company}
-                onChange={handleInputChange}
-                placeholder="Company Name"
-                className="w-full px-4 py-4 bg-gray-800/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
-              />
-            </div>
-
-            {/* Password Input */}
-            <div>
-              <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 name="password"
-                required
                 value={formData.password}
                 onChange={handleInputChange}
-                placeholder="Create Password"
-                className="w-full px-4 py-4 bg-gray-800/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
-                autoComplete="new-password"
+                className={`w-full px-4 py-3 pr-12 bg-gray-800 border rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${
+                  errors.password ? 'border-red-500' : 'border-gray-600'
+                }`}
+                placeholder="Create a password"
+                disabled={isLoading}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                disabled={isLoading}
+              >
+                {showPassword ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
+              </button>
             </div>
+            {errors.password && (
+              <p className="mt-1 text-sm text-red-400">{errors.password}</p>
+            )}
+          </div>
 
-            {/* Continue Button */}
-            <motion.button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 shadow-lg disabled:cursor-not-allowed"
-              whileHover={!isLoading ? { scale: 1.02, boxShadow: "0 20px 50px rgba(168, 85, 247, 0.4)" } : {}}
-              whileTap={!isLoading ? { scale: 0.98 } : {}}
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Creating Account...
-                </div>
-              ) : (
-                'Continue'
-              )}
-            </motion.button>
+          {/* Confirm Password */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Confirm Password
+            </label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                className={`w-full px-4 py-3 pr-12 bg-gray-800 border rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${
+                  errors.confirmPassword ? 'border-red-500' : 'border-gray-600'
+                }`}
+                placeholder="Confirm your password"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                disabled={isLoading}
+              >
+                {showConfirmPassword ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            {errors.confirmPassword && (
+              <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>
+            )}
+          </div>
 
-            {/* Terms and Privacy */}
-            <motion.div 
-              className="text-center text-sm text-gray-400"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-            >
-              <p className="mb-2">By proceeding, you agree to the</p>
-              <div className="flex justify-center space-x-1">
-                <a href="#" className="text-cyan-400 hover:text-cyan-300 transition-colors underline">
-                  Terms of Service
-                </a>
-                <span>and</span>
-                <a href="#" className="text-cyan-400 hover:text-cyan-300 transition-colors underline">
-                  Privacy Policy
-                </a>
-              </div>
-            </motion.div>
-          </motion.form>
-
-          {/* Login Link */}
-          <motion.div 
-            className="text-center mt-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.7 }}
+          {/* Submit Button */}
+          <motion.button
+            type="submit"
+            disabled={isLoading}
+            className="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+            whileHover={{ scale: isLoading ? 1 : 1.02 }}
+            whileTap={{ scale: isLoading ? 1 : 0.98 }}
           >
-            <span className="text-gray-400">Already have an account? </span>
-            <button 
-              onClick={handleLogin}
-              className="text-purple-400 hover:text-purple-300 transition-colors font-medium cursor-pointer"
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Creating account...
+              </div>
+            ) : (
+              'Create Account'
+            )}
+          </motion.button>
+        </motion.form>
+
+        {/* Back Button */}
+        <motion.div 
+          className="mt-6 text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+        >
+          <button
+            onClick={() => navigate('/account-type')}
+            className="text-gray-400 hover:text-white transition-colors text-sm flex items-center justify-center gap-2 mx-auto"
+            disabled={isLoading}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Account Type
+          </button>
+        </motion.div>
+
+        {/* Footer */}
+        <motion.div 
+          className="mt-8 text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.6 }}
+        >
+          <p className="text-gray-400 text-sm">
+            Already have an account?{' '}
+            <button
+              onClick={handleLoginClick}
+              className="text-purple-400 hover:text-purple-300 transition-colors font-medium"
+              disabled={isLoading}
             >
-              Log in
+              Sign in
             </button>
-          </motion.div>
+          </p>
         </motion.div>
       </div>
-
-      {/* Right Side - Visual */}
-      <motion.div 
-        className="hidden lg:flex flex-1 relative overflow-hidden"
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.8, delay: 0.3 }}
-      >
-        {/* Background Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-600 to-red-600"></div>
-        
-        {/* Overlay Pattern */}
-        <div className="absolute inset-0 bg-black/20"></div>
-        
-        {/* Content */}
-        <div className="relative z-10 flex flex-col justify-center items-center p-12 text-white">
-          <motion.div
-            className="text-center max-w-md"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.5 }}
-          >
-            <div className="mb-8">
-              <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm">
-                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-            </div>
-            
-            <h3 className="text-3xl font-bold mb-6">
-              Transform Your Business Operations
-            </h3>
-            
-            <p className="text-xl text-white/90 mb-8">
-              Join thousands of companies already using Mindsync Work to streamline their workflows and boost productivity.
-            </p>
-
-            {/* Feature Points */}
-            <div className="space-y-4 text-left">
-              {[
-                { icon: '✨', text: 'Enterprise-grade security and compliance' },
-                { icon: '🚀', text: 'Boost team productivity by 40% on average' },
-                { icon: '🎯', text: 'Customize workflows for any industry' },
-                { icon: '🔗', text: 'Integrate with 100+ business tools' }
-              ].map((feature, index) => (
-                <motion.div
-                  key={feature.text}
-                  className="flex items-center space-x-3"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 0.7 + index * 0.1 }}
-                >
-                  <span className="text-2xl">{feature.icon}</span>
-                  <span className="text-white/90">{feature.text}</span>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Floating Elements */}
-          <div className="absolute top-20 right-20 w-16 h-16 bg-white/10 rounded-full animate-pulse"></div>
-          <div className="absolute bottom-20 left-20 w-12 h-12 bg-white/15 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute top-1/3 left-12 w-8 h-8 bg-white/20 rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
-        </div>
-
-        {/* Decorative Shapes */}
-        <div className="absolute -top-12 -right-12 w-48 h-48 bg-gradient-to-br from-white/10 to-transparent rounded-full blur-xl"></div>
-        <div className="absolute -bottom-12 -left-12 w-64 h-64 bg-gradient-to-tr from-white/5 to-transparent rounded-full blur-2xl"></div>
-      </motion.div>
     </div>
   );
 };

@@ -413,9 +413,17 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
   const loadWorkspaces = async () => {
     try {
       const workspacesList = await WorkspaceService.getWorkspaces();
-      setWorkspaces(workspacesList);
-      if (workspacesList.length > 0 && !selectedWorkspace) {
-        setSelectedWorkspace(workspacesList[0]);
+      // Transform API workspaces to include UI properties
+      const transformedWorkspaces = workspacesList.map(ws => ({
+        ...ws,
+        color: '#8B5CF6', // Default purple color
+        icon: 'briefcase', // Default icon
+        createdAt: new Date(ws.createdAt),
+        updatedAt: new Date(ws.updatedAt)
+      }));
+      setWorkspaces(transformedWorkspaces);
+      if (transformedWorkspaces.length > 0 && !selectedWorkspace) {
+        setSelectedWorkspace(transformedWorkspaces[0]);
       }
     } catch (error) {
       console.error('Error loading workspaces:', error);
@@ -448,7 +456,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
     const itemName = prompt(`Enter ${itemType} name:`);
     if (itemName && itemName.trim() && selectedWorkspace) {
       try {
-        await WorkspaceService.createItem({
+        await WorkspaceService.createWorkspaceItem({
           name: itemName.trim(),
           type: itemType as any,
           workspaceId: selectedWorkspace.id,
@@ -482,7 +490,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
       const folderName = prompt('Enter folder name:');
       if (folderName && folderName.trim() && selectedWorkspace) {
         try {
-          await WorkspaceService.createItem({
+          await WorkspaceService.createWorkspaceItem({
             name: folderName.trim(),
             type: 'folder',
             workspaceId: selectedWorkspace.id,

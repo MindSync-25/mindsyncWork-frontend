@@ -54,14 +54,11 @@ const CreateItemModal: React.FC<CreateItemModalProps> = ({
 
     setCreating(true);
     try {
-      const newItem = await WorkspaceService.createItem({
+      const newItem = await WorkspaceService.createWorkspaceItem({
         name: name.trim(),
         type: selectedType,
         workspaceId,
-        parentId,
-        description: description.trim() || undefined,
-        color,
-        icon
+        parentId
       });
 
       onItemCreated(newItem);

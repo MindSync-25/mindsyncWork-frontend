@@ -48,7 +48,6 @@ const DashboardPage: React.FC = () => {
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           activeView={activeView}
           onNavigationChange={handleNavigationChange}
-          boardName={boardName}
         />
         {renderMainContent()}
       </div>

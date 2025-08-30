@@ -29,7 +29,17 @@ const WorkspacePage: React.FC = () => {
     try {
       // Load workspace info
       const workspaceData = await WorkspaceService.getWorkspace(workspaceId);
-      setWorkspace(workspaceData);
+      if (workspaceData) {
+        // Transform API workspace to include UI properties
+        const transformedWorkspace = {
+          ...workspaceData,
+          color: '#8B5CF6', // Default purple color
+          icon: 'briefcase', // Default icon
+          createdAt: new Date(workspaceData.createdAt),
+          updatedAt: new Date(workspaceData.updatedAt)
+        };
+        setWorkspace(transformedWorkspace);
+      }
 
       // Load items for current location
       const itemsData = await WorkspaceService.getItemsByParent(workspaceId, parentId);
@@ -107,7 +117,20 @@ const WorkspacePage: React.FC = () => {
     return currentItem?.type === 'subfolder' ? 'subfolder' : 'folder';
   };
 
-  const allowedTypes = WorkspaceService.getAllowedItemTypes(getCurrentItemType());
+  const getAllowedItemTypes = (currentType: string): string[] => {
+    switch (currentType) {
+      case 'workspace':
+        return ['project', 'portfolio', 'board', 'doc', 'dashboard', 'form', 'workflow', 'folder'];
+      case 'folder':
+        return ['project', 'portfolio', 'board', 'doc', 'dashboard', 'form', 'workflow', 'subfolder'];
+      case 'subfolder':
+        return ['project', 'portfolio', 'board', 'doc', 'dashboard', 'form', 'workflow'];
+      default:
+        return [];
+    }
+  };
+
+  const allowedTypes = getAllowedItemTypes(getCurrentItemType());
 
   const ItemCard = ({ item }: { item: WorkspaceItem }) => (
     <motion.div
@@ -174,13 +197,13 @@ const WorkspacePage: React.FC = () => {
         }
       </p>
       <div className="flex flex-wrap gap-3 justify-center">
-        {allowedTypes.map(type => (
+        {allowedTypes.map((type: string) => (
           <button
             key={type}
-            onClick={() => handleCreateItem(type)}
-            className={`px-4 py-2 bg-gradient-to-r ${getItemColor(type)} text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center gap-2`}
+            onClick={() => handleCreateItem(type as any)}
+            className={`px-4 py-2 bg-gradient-to-r ${getItemColor(type as any)} text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center gap-2`}
           >
-            <span>{getItemIcon(type)}</span>
+            <span>{getItemIcon(type as any)}</span>
             <span className="capitalize">Create {type}</span>
           </button>
         ))}
@@ -309,7 +332,7 @@ const WorkspacePage: React.FC = () => {
         onClose={() => setCreateModalOpen(false)}
         workspaceId={workspaceId!}
         parentId={parentId}
-        allowedTypes={allowedTypes.filter(type => type !== 'board')} // Boards go through template selection
+        allowedTypes={allowedTypes.filter((type: string) => type !== 'board') as any} // Boards go through template selection
         onItemCreated={handleItemCreated}
       />
     </div>

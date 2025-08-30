@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface Task {
   id: string;
@@ -25,7 +25,7 @@ interface Column {
 
 const MondayBoard: React.FC = () => {
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
-  const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false);
+  const [_isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false);
   const [editingCell, setEditingCell] = useState<{taskId: string, columnId: string} | null>(null);
   const [editingColumn, setEditingColumn] = useState<string | null>(null);
   
@@ -40,16 +40,16 @@ const MondayBoard: React.FC = () => {
   ]);
 
   // Available column types for adding
-  const availableColumnTypes = [
-    { id: 'text', label: 'Text', icon: '📝' },
-    { id: 'number', label: 'Numbers', icon: '🔢' },
-    { id: 'person', label: 'Person', icon: '👤' },
-    { id: 'status', label: 'Status', icon: '🎯' },
-    { id: 'date', label: 'Date', icon: '📅' },
-    { id: 'timeline', label: 'Timeline', icon: '📊' },
-    { id: 'priority', label: 'Priority', icon: '⚡' },
-    { id: 'dropdown', label: 'Dropdown', icon: '📋' }
-  ];
+  // const availableColumnTypes = [
+  //   { id: 'text', label: 'Text', icon: '📝' },
+  //   { id: 'number', label: 'Numbers', icon: '🔢' },
+  //   { id: 'person', label: 'Person', icon: '👤' },
+  //   { id: 'status', label: 'Status', icon: '🎯' },
+  //   { id: 'date', label: 'Date', icon: '📅' },
+  //   { id: 'timeline', label: 'Timeline', icon: '📊' },
+  //   { id: 'priority', label: 'Priority', icon: '⚡' },
+  //   { id: 'dropdown', label: 'Dropdown', icon: '📋' }
+  // ];
 
   // Sample tasks with groups
   const [tasks, setTasks] = useState<Task[]>([

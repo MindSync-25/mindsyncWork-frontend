@@ -142,7 +142,7 @@ const WorkspaceCustomizationPage: React.FC = () => {
               </div>
               
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {templateColumns.map((column: any, index: number) => (
+                {templateColumns.map((column: any, _index: number) => (
                   <div 
                     key={column.id} 
                     className="bg-white/5 border border-white/10 rounded-lg p-3 text-center"
