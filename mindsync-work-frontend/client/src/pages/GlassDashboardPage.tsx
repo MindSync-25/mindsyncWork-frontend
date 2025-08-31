@@ -1,6 +1,6 @@
 import React from "react";
 import { createPortal } from 'react-dom';
-import { Bell, Plus, Search, ChevronDown, ChevronRight, Activity, Star, StarOff, X, Building2, FolderPlus, ChevronLeft, MoreHorizontal } from "lucide-react";
+import { Bell, Plus, Search, ChevronDown, ChevronRight, Activity, Star, StarOff, X, Building2, FolderPlus, ChevronLeft, MoreHorizontal, Home, Layers, BarChart3 } from "lucide-react";
 
 // ============================================================================
 // TYPES
@@ -184,29 +184,84 @@ const Sidebar: React.FC<{ workspace: Workspace | undefined; active: { projectId?
 // ============================================================================
 // TOP BAR
 // ============================================================================
-const TopBar: React.FC<{ workspaces: Workspace[]; activeWsId: string; setActiveWsId:(id:string)=>void; onTogglePin:(id:string)=>void; projectName?: string; boardName?: string; }> = ({ workspaces, activeWsId, setActiveWsId, onTogglePin, projectName, boardName }) => (
-  <div className="sticky top-0 z-50">
-    <div className="mx-auto -mb-4 max-w-7xl px-4">
-      <div className="relative rounded-2xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-2xl shadow-[0_4px_30px_-4px_rgba(0,0,0,0.55)]">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800" />
-            <span className="hidden sm:block text-[13px] font-semibold tracking-wide text-slate-100">MindSync Work</span>
-            <span className="mx-2 text-slate-600">•</span>
-            <WorkspaceSwitcher workspaces={workspaces} activeId={activeWsId} onSelect={setActiveWsId} onCreate={()=> setShowCreateWs && setShowCreateWs(true)} onTogglePin={onTogglePin} />
-            {projectName && (<><ChevronRight className="h-4 w-4 text-slate-600"/><span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-200">{projectName}</span></>)}
-            {boardName && (<><ChevronRight className="h-4 w-4 text-slate-600"/><span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-200">{boardName}</span></>)}
+const TopBar: React.FC<{ workspaces: Workspace[]; activeWsId: string; setActiveWsId:(id:string)=>void; onTogglePin:(id:string)=>void; projectName?: string; boardName?: string; onProjectHome?: () => void; onShowAllBoards?: () => void; onShowDashboard?: () => void; }> = ({ workspaces, activeWsId, setActiveWsId, onTogglePin, projectName, boardName, onProjectHome, onShowAllBoards, onShowDashboard }) => {
+  
+  return (
+    <div className="sticky top-0 z-50">
+      <div className="mx-auto -mb-4 max-w-7xl px-4">
+        <div className="relative rounded-2xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-2xl shadow-[0_4px_30px_-4px_rgba(0,0,0,0.55)]">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800" />
+              <span className="hidden sm:block text-[13px] font-semibold tracking-wide text-slate-100">MindSync Work</span>
+              <span className="mx-2 text-slate-600">•</span>
+              <WorkspaceSwitcher workspaces={workspaces} activeId={activeWsId} onSelect={setActiveWsId} onCreate={()=> setShowCreateWs && setShowCreateWs(true)} onTogglePin={onTogglePin} />
+              
+              {projectName && (
+                <>
+                  <ChevronRight className="h-4 w-4 text-slate-600"/>
+                  <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-200 flex items-center gap-1">
+                    <Building2 className="h-3 w-3" />
+                    <span>{projectName}</span>
+                  </span>
+                </>
+              )}
+              
+              {boardName && (
+                <>
+                  <ChevronRight className="h-4 w-4 text-slate-600"/>
+                  <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-200 flex items-center gap-1">
+                    <span>{boardName}</span>
+                  </span>
+                </>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-slate-400">
+                <Search className="h-4 w-4"/>
+                <input placeholder="Search tasks..." className="w-40 bg-transparent text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none"/>
+              </div>
+              <SoftButton className="p-2" title="Notifications">
+                <Bell className="h-4 w-4 text-slate-300"/>
+              </SoftButton>
+              <SoftButton className="text-xs">
+                <Plus className="mr-1 inline h-3.5 w-3.5"/> New
+              </SoftButton>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-slate-400"><Search className="h-4 w-4"/><input placeholder="Search" className="w-40 bg-transparent text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none"/></div>
-            <SoftButton className="p-2"><Bell className="h-4 w-4 text-slate-300"/></SoftButton>
-            <SoftButton className="text-xs"><Plus className="mr-1 inline h-3.5 w-3.5"/> New</SoftButton>
-          </div>
+          
+          {/* Navigation Options Row */}
+          {projectName && (
+            <div className="flex items-center gap-3 mt-2">
+              <button 
+                onClick={onShowDashboard}
+                className="flex items-center gap-1 px-2 py-1 text-xs text-slate-300 hover:text-slate-100 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <BarChart3 className="h-3 w-3" />
+                Dashboard
+              </button>
+              <button 
+                onClick={onProjectHome}
+                className="flex items-center gap-1 px-2 py-1 text-xs text-slate-300 hover:text-slate-100 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <Home className="h-3 w-3" />
+                Project Home
+              </button>
+              <button 
+                onClick={onShowAllBoards}
+                className="flex items-center gap-1 px-2 py-1 text-xs text-slate-300 hover:text-slate-100 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <Layers className="h-3 w-3" />
+                Boards
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ============================================================================
 // BOARD SCREEN (secondary nav: board selector + view type pills)
@@ -1311,6 +1366,7 @@ const TaskEditorModal: React.FC<{ open:boolean; mode:'new'|'edit'; column:string
 const CalendarView: React.FC<{ data: KanbanBoardData; onAddTask:(col:string)=>void; onEditTask:(col:string, taskId:string)=>void }> = ({ data, onAddTask, onEditTask }) => {
   const [currentDate, setCurrentDate] = React.useState(new Date());
   const [viewMode, setViewMode] = React.useState<'month'|'week'>('month');
+  const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
   
   // Get all tasks with due dates
   const tasksWithDates = React.useMemo(() => {
@@ -1364,9 +1420,19 @@ const CalendarView: React.FC<{ data: KanbanBoardData; onAddTask:(col:string)=>vo
   return (
     <GlassCard className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-slate-100">
-          {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-        </h2>
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-bold text-slate-100">
+            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+          </h2>
+          <div className="flex items-center gap-2">
+            <Pill tone="neutral" className="text-xs">
+              {tasksWithDates.length} scheduled tasks
+            </Pill>
+            <Pill tone="blue" className="text-xs">
+              {tasksWithDates.filter(({task}) => task.due && new Date(task.due).getMonth() === currentDate.getMonth()).length} this month
+            </Pill>
+          </div>
+        </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 p-1">
             <button 
@@ -1405,6 +1471,23 @@ const CalendarView: React.FC<{ data: KanbanBoardData; onAddTask:(col:string)=>vo
         </div>
       </div>
 
+      {selectedDate && (
+        <div className="mb-4 p-3 rounded-lg bg-purple-500/10 border border-purple-400/20">
+          <div className="flex items-center gap-2 text-sm text-purple-200">
+            <span className="font-medium">Selected:</span>
+            <span>{selectedDate.toLocaleDateString()}</span>
+            <span className="text-purple-300">•</span>
+            <span className="text-xs">Click + button to add a task for this date</span>
+            <button 
+              onClick={() => setSelectedDate(null)}
+              className="ml-auto text-purple-300 hover:text-purple-100"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-7 gap-1 mb-2">
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
           <div key={day} className="p-2 text-center text-xs font-medium text-slate-400 uppercase tracking-wide">
@@ -1422,31 +1505,59 @@ const CalendarView: React.FC<{ data: KanbanBoardData; onAddTask:(col:string)=>vo
           return (
             <div 
               key={index}
-              className={`min-h-[100px] p-2 border border-white/10 rounded-lg transition ${
+              className={`min-h-[100px] p-2 border border-white/10 rounded-lg transition cursor-pointer hover:bg-white/10 ${
                 isCurrentMonth ? 'bg-white/5' : 'bg-white/2 opacity-50'
-              } ${isToday ? 'ring-2 ring-cyan-400/40' : ''}`}
+              } ${isToday ? 'ring-2 ring-cyan-400/40' : ''} ${selectedDate?.toDateString() === date.toDateString() ? 'ring-2 ring-purple-400/40' : ''}`}
+              onClick={() => setSelectedDate(date)}
             >
-              <div className={`text-sm font-medium mb-2 ${isToday ? 'text-cyan-300' : 'text-slate-300'}`}>
-                {date.getDate()}
+              <div className={`text-sm font-medium mb-2 flex items-center justify-between ${isToday ? 'text-cyan-300' : 'text-slate-300'}`}>
+                <span>{date.getDate()}</span>
+                {selectedDate?.toDateString() === date.toDateString() && (
+                  <SoftButton 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Add task to the first column (Backlog/Todo)
+                      onAddTask(data.order[0]);
+                    }}
+                    className="text-[10px] px-1 py-0.5"
+                    title="Add task for this date"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </SoftButton>
+                )}
               </div>
               <div className="space-y-1">
-                {dayTasks.slice(0, 3).map(({ task, column }) => (
-                  <div 
-                    key={task.id}
-                    onClick={() => onEditTask(column, task.id)}
-                    className="p-1 rounded text-[10px] text-slate-200 bg-white/10 hover:bg-white/20 cursor-pointer truncate"
-                    title={task.title}
-                  >
-                    <div className="flex items-center gap-1">
-                      <Pill tone={column === 'Done' ? 'green' : column === 'In Progress' ? 'amber' : 'neutral'} className="text-[8px] px-1">
-                        {column.slice(0, 3)}
-                      </Pill>
-                      <span className="truncate">{task.title}</span>
+                {dayTasks.slice(0, 3).map(({ task, column }) => {
+                  const devTask = task as DevKanbanTask;
+                  return (
+                    <div 
+                      key={task.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditTask(column, task.id);
+                      }}
+                      className="p-1 rounded text-[10px] text-slate-200 bg-white/10 hover:bg-white/20 cursor-pointer truncate transition-colors"
+                      title={`${task.title} - ${column}`}
+                    >
+                      <div className="flex items-center gap-1">
+                        <Pill tone={column === 'Done' ? 'green' : column === 'In Progress' ? 'amber' : column === 'In Review' ? 'purple' : 'neutral'} className="text-[8px] px-1">
+                          {column.slice(0, 3)}
+                        </Pill>
+                        <span className="truncate flex-1">{task.title}</span>
+                        {devTask.priority && (
+                          <span className={`text-[8px] ${devTask.priority === 'High' ? 'text-red-400' : devTask.priority === 'Medium' ? 'text-amber-400' : 'text-slate-400'}`}>
+                            {devTask.priority[0]}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {dayTasks.length > 3 && (
                   <div className="text-[9px] text-slate-400">+{dayTasks.length - 3} more</div>
+                )}
+                {dayTasks.length === 0 && selectedDate?.toDateString() === date.toDateString() && (
+                  <div className="text-[9px] text-slate-500 italic">Click + to add task</div>
                 )}
               </div>
             </div>
@@ -1760,6 +1871,329 @@ const TimelineView: React.FC<{ data: KanbanBoardData; onAddTask:(col:string)=>vo
 };
 
 // ============================================================================
+// DASHBOARD SCREEN
+// ============================================================================
+const DashboardScreen: React.FC<{ projectName: string; }> = ({ projectName }) => {
+  const kpis = [
+    { id: "kpi_sprint_progress", title: "Sprint Progress", value: "73%", trend: "+5%", color: "emerald" },
+    { id: "kpi_velocity_avg3", title: "Velocity", value: "42", trend: "+8%", color: "cyan" },
+    { id: "kpi_lead_time_p50", title: "Lead Time", value: "3.2d", trend: "-12%", color: "purple" },
+    { id: "kpi_open_p0p1_bugs", title: "Critical Bugs", value: "2", trend: "-1", color: "red" },
+    { id: "kpi_deploys_7d", title: "Deploys (7d)", value: "14", trend: "+3", color: "amber" },
+  ];
+
+  // Sample chart data for more realistic widgets
+  const sprintData = [65, 73, 78, 73]; // Last 4 days progress
+  const velocityData = [35, 42, 38, 45, 41, 39, 42, 44]; // Last 8 sprints
+  const prReviewTimes = [2.3, 1.8, 2.1, 1.5, 1.9, 2.4, 1.7, 2.0]; // Hours over 8 weeks
+
+  const MiniChart: React.FC<{ data: number[]; type: 'line' | 'bar'; color: string; height?: string }> = ({ data, type, color, height = "h-16" }) => {
+    const max = Math.max(...data);
+    const min = Math.min(...data);
+    
+    if (type === 'line') {
+      const points = data.map((value, index) => {
+        const x = (index / (data.length - 1)) * 100;
+        const y = 100 - ((value - min) / (max - min)) * 100;
+        return `${x},${y}`;
+      }).join(' ');
+
+      return (
+        <div className={`w-full ${height} relative`}>
+          <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <polyline
+              fill="none"
+              stroke={`rgb(${color === 'emerald' ? '34 197 94' : color === 'cyan' ? '6 182 212' : '168 85 247'})`}
+              strokeWidth="2"
+              points={points}
+            />
+          </svg>
+        </div>
+      );
+    }
+
+    return (
+      <div className={`flex items-end justify-between ${height} gap-1`}>
+        {data.map((value, index) => {
+          const height = ((value - min) / (max - min)) * 100;
+          return (
+            <div
+              key={index}
+              className={`flex-1 rounded-sm ${
+                color === 'emerald' ? 'bg-emerald-500/60' : 
+                color === 'cyan' ? 'bg-cyan-500/60' : 
+                color === 'purple' ? 'bg-purple-500/60' :
+                'bg-slate-500/60'
+              }`}
+              style={{ height: `${height}%` }}
+            />
+          );
+        })}
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-100">{projectName} Dashboard</h1>
+          <p className="text-sm text-slate-400 mt-1">Software development metrics and insights</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Pill tone="blue" className="text-xs">Last 30 days</Pill>
+          <SoftButton className="text-xs">
+            <MoreHorizontal className="h-3 w-3 mr-1" />
+            Configure
+          </SoftButton>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        {kpis.map(kpi => (
+          <GlassCard key={kpi.id} className="p-4 hover:bg-white/10 transition-colors cursor-pointer">
+            <div className="text-xs text-slate-400 font-medium uppercase tracking-wide mb-2">
+              {kpi.title}
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="text-2xl font-bold text-slate-100">{kpi.value}</div>
+              <div className={`text-xs font-medium px-2 py-1 rounded-full ${
+                kpi.trend.startsWith('+') 
+                  ? 'text-emerald-400 bg-emerald-500/10' 
+                  : kpi.trend.startsWith('-') 
+                    ? 'text-red-400 bg-red-500/10' 
+                    : 'text-slate-400 bg-slate-500/10'
+              }`}>
+                {kpi.trend}
+              </div>
+            </div>
+          </GlassCard>
+        ))}
+      </div>
+
+      {/* Main Dashboard Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        
+        {/* Sprint Burndown - Compact */}
+        <GlassCard className="p-4 lg:col-span-2">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-100">Sprint Burndown</h3>
+            <Pill tone="green" className="text-xs">On Track</Pill>
+          </div>
+          <div className="mb-2">
+            <div className="text-lg font-bold text-slate-100">73% Complete</div>
+            <div className="text-xs text-slate-400">4 days remaining</div>
+          </div>
+          <MiniChart data={sprintData} type="line" color="emerald" height="h-12" />
+        </GlassCard>
+
+        {/* Velocity */}
+        <GlassCard className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-100">Velocity</h3>
+            <div className="text-xs text-cyan-400">+8%</div>
+          </div>
+          <div className="mb-2">
+            <div className="text-lg font-bold text-slate-100">42 pts</div>
+            <div className="text-xs text-slate-400">avg last 3</div>
+          </div>
+          <MiniChart data={velocityData} type="bar" color="cyan" height="h-10" />
+        </GlassCard>
+
+        {/* Test Coverage */}
+        <GlassCard className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-100">Test Coverage</h3>
+            <div className="text-xs text-emerald-400">+2%</div>
+          </div>
+          <div className="mb-2">
+            <div className="text-lg font-bold text-slate-100">87%</div>
+            <div className="text-xs text-slate-400">all suites</div>
+          </div>
+          <div className="w-full bg-white/10 rounded-full h-2">
+            <div className="bg-emerald-500 h-2 rounded-full" style={{width: '87%'}}></div>
+          </div>
+        </GlassCard>
+
+        {/* PR Review Time */}
+        <GlassCard className="p-4 lg:col-span-2">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-100">PR Review Time</h3>
+            <div className="text-xs text-purple-400">Median</div>
+          </div>
+          <div className="mb-2">
+            <div className="text-lg font-bold text-slate-100">1.9h</div>
+            <div className="text-xs text-slate-400">down from 2.4h</div>
+          </div>
+          <MiniChart data={prReviewTimes} type="line" color="purple" height="h-12" />
+        </GlassCard>
+
+        {/* Active PRs */}
+        <GlassCard className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-100">Active PRs</h3>
+            <div className="text-xs text-amber-400">2 aging</div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-300">Ready to merge</span>
+              <span className="text-emerald-400 font-medium">4</span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-300">In review</span>
+              <span className="text-cyan-400 font-medium">7</span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-300">Needs changes</span>
+              <span className="text-amber-400 font-medium">2</span>
+            </div>
+          </div>
+        </GlassCard>
+
+        {/* Deploy Frequency */}
+        <GlassCard className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-100">Deploy Freq</h3>
+            <div className="text-xs text-emerald-400">+21%</div>
+          </div>
+          <div className="mb-2">
+            <div className="text-lg font-bold text-slate-100">2.3/day</div>
+            <div className="text-xs text-slate-400">last 7 days</div>
+          </div>
+          <div className="flex items-center gap-1">
+            {[3, 2, 4, 1, 3, 2, 1].map((deploys, i) => (
+              <div key={i} className="flex-1 text-center">
+                <div className={`h-6 rounded-sm mb-1 ${
+                  deploys >= 3 ? 'bg-emerald-500/60' : 
+                  deploys >= 2 ? 'bg-cyan-500/60' : 
+                  'bg-slate-500/60'
+                }`} style={{height: `${deploys * 8}px`}}></div>
+                <div className="text-xs text-slate-500">{['M','T','W','T','F','S','S'][i]}</div>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+
+      </div>
+
+      {/* Bottom Row - More Detailed Widgets */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        
+        {/* Blocked Items */}
+        <GlassCard className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-slate-100">Blocked Items</h3>
+            <Pill tone="red" className="text-xs">2 critical</Pill>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-2 rounded-lg bg-red-500/10 border border-red-400/20">
+              <div>
+                <div className="text-xs font-medium text-slate-200">Payment Integration</div>
+                <div className="text-xs text-red-300">Blocked 3d • API issue</div>
+              </div>
+              <Pill tone="red" className="text-xs">P0</Pill>
+            </div>
+            <div className="flex items-center justify-between p-2 rounded-lg bg-amber-500/10 border border-amber-400/20">
+              <div>
+                <div className="text-xs font-medium text-slate-200">API Refactor</div>
+                <div className="text-xs text-amber-300">Waiting approval</div>
+              </div>
+              <Pill tone="amber" className="text-xs">P1</Pill>
+            </div>
+            <div className="text-center">
+              <button className="text-xs text-slate-400 hover:text-slate-200">View all blocked items →</button>
+            </div>
+          </div>
+        </GlassCard>
+
+        {/* Epic Progress */}
+        <GlassCard className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-slate-100">Epic Progress</h3>
+            <div className="text-xs text-slate-400">3 active</div>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs font-medium text-slate-200">User Authentication</span>
+                <span className="text-xs text-emerald-400">85%</span>
+              </div>
+              <div className="w-full bg-white/10 rounded-full h-1.5">
+                <div className="bg-emerald-500 h-1.5 rounded-full" style={{width: '85%'}}></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs font-medium text-slate-200">Payment System</span>
+                <span className="text-xs text-cyan-400">45%</span>
+              </div>
+              <div className="w-full bg-white/10 rounded-full h-1.5">
+                <div className="bg-cyan-500 h-1.5 rounded-full" style={{width: '45%'}}></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs font-medium text-slate-200">Mobile App</span>
+                <span className="text-xs text-purple-400">12%</span>
+              </div>
+              <div className="w-full bg-white/10 rounded-full h-1.5">
+                <div className="bg-purple-500 h-1.5 rounded-full" style={{width: '12%'}}></div>
+              </div>
+            </div>
+            <div className="text-center pt-2">
+              <button className="text-xs text-slate-400 hover:text-slate-200">View roadmap →</button>
+            </div>
+          </div>
+        </GlassCard>
+
+        {/* Team Activity */}
+        <GlassCard className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-slate-100">Team Activity</h3>
+            <div className="text-xs text-slate-400">Today</div>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-start gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0"></div>
+              <div>
+                <div className="text-xs text-slate-200">Bug fix deployed</div>
+                <div className="text-xs text-slate-400">2h ago • Sam</div>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 mt-1.5 shrink-0"></div>
+              <div>
+                <div className="text-xs text-slate-200">PR merged to main</div>
+                <div className="text-xs text-slate-400">4h ago • Ava</div>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 shrink-0"></div>
+              <div>
+                <div className="text-xs text-slate-200">Code review completed</div>
+                <div className="text-xs text-slate-400">6h ago • Leo</div>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0"></div>
+              <div>
+                <div className="text-xs text-slate-200">Sprint planning started</div>
+                <div className="text-xs text-slate-400">1d ago • Team</div>
+              </div>
+            </div>
+            <div className="text-center pt-2">
+              <button className="text-xs text-slate-400 hover:text-slate-200">View activity feed →</button>
+            </div>
+          </div>
+        </GlassCard>
+
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
 // MAIN PAGE
 // ============================================================================
 const GlassDashboardPage: React.FC = () => {
@@ -1835,6 +2269,7 @@ const GlassDashboardPage: React.FC = () => {
   const [pinnedBoardIds, setPinnedBoardIds] = React.useState<string[]>(['b1', 'b2']); // Pin Development and QA boards
   const [showCreateWs, setShowCreateWs] = React.useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+  const [currentView, setCurrentView] = React.useState<'dashboard' | 'boards'>('boards');
 
   const activeWs = workspaces.find(w => w.id === activeWsId);
   const activeProject = activeWs?.projects.find(p => p.id === activeProjectId);
@@ -1936,7 +2371,21 @@ const GlassDashboardPage: React.FC = () => {
         setActiveWsId={setActiveWsId}
         onTogglePin={(id) => setWorkspaces(prev => prev.map(w => w.id === id ? { ...w, pinned: !w.pinned } : w))}
         projectName={activeProject?.name}
-        boardName={activeBoard.name}
+        boardName={currentView === 'boards' ? activeBoard.name : undefined}
+        onProjectHome={() => {
+          // Navigate to project home - this could be a specific board or project dashboard
+          console.log('Navigate to project home');
+        }}
+        onShowAllBoards={() => {
+          // Show all boards for the current project
+          setCurrentView('boards');
+          console.log('Show all boards');
+        }}
+        onShowDashboard={() => {
+          // Show dashboard for the current project
+          setCurrentView('dashboard');
+          console.log('Show dashboard');
+        }}
       />
 
       <div className="flex">
@@ -1994,16 +2443,20 @@ const GlassDashboardPage: React.FC = () => {
         {/* Main Content */}
         <div className="flex-1 min-w-0 overflow-hidden">
           <div className="mx-auto max-w-7xl px-4 py-6">
-            <BoardScreen
-              board={activeBoard}
-              boards={boards}
-              onSelectBoard={setActiveBoardId}
-              onAddBoard={addBoard}
-              pinnedIds={pinnedBoardIds}
-              onTogglePin={togglePinBoard}
-              onRenameBoard={renameBoard}
-              onDeleteBoard={deleteBoard}
-            />
+            {currentView === 'dashboard' ? (
+              <DashboardScreen projectName={activeProject?.name || 'Project'} />
+            ) : (
+              <BoardScreen
+                board={activeBoard}
+                boards={boards}
+                onSelectBoard={setActiveBoardId}
+                onAddBoard={addBoard}
+                pinnedIds={pinnedBoardIds}
+                onTogglePin={togglePinBoard}
+                onRenameBoard={renameBoard}
+                onDeleteBoard={deleteBoard}
+              />
+            )}
           </div>
         </div>
       </div>
