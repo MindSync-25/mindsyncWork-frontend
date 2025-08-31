@@ -1,6 +1,6 @@
 import React from "react";
 import { createPortal } from 'react-dom';
-import { Bell, Plus, Search, ChevronDown, ChevronRight, Activity, Star, StarOff, X, Building2, FolderPlus, Link as LinkIcon, ChevronLeft, MoreHorizontal } from "lucide-react";
+import { Bell, Plus, Search, ChevronDown, ChevronRight, Activity, Star, StarOff, X, Building2, FolderPlus, ChevronLeft, MoreHorizontal } from "lucide-react";
 
 // ============================================================================
 // TYPES
@@ -148,14 +148,14 @@ const Sidebar: React.FC<{ workspace: Workspace | undefined; active: { projectId?
   const commitRename=()=>{ if(!editingId) return; const trimmed=editingValue.trim(); if(trimmed) onRenameProject(editingId, trimmed); setEditingId(null); };
   return (
     <aside className="hidden w-64 shrink-0 md:block border-r border-white/10 pr-2">
-      <div className="sticky top-4 space-y-3">
+      <div className="sticky top-12 space-y-3">
         {/* Sidebar header with collapse control (outside cards) */}
-        <div className="flex items-center justify-between px-1">
-          <button onClick={onCollapse} aria-label="Collapse sidebar" className="rounded-md p-1 text-slate-400 hover:text-slate-200 hover:bg-white/10">
+        <div className="flex items-center justify-between px-3 py-3 mb-2">
+          <button onClick={onCollapse} aria-label="Collapse sidebar" className="rounded-md p-2 text-slate-400 hover:text-slate-200 hover:bg-white/10 transition-colors">
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Sidebar</span>
-          <div className="w-5" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Projects</span>
+          <div className="w-8" />
         </div>
         <GlassCard className="p-3">
           <div className="mb-2 flex items-center justify-between">
@@ -182,93 +182,31 @@ const Sidebar: React.FC<{ workspace: Workspace | undefined; active: { projectId?
 };
 
 // ============================================================================
-// BOARD CONTENT VARIANTS
+// TOP BAR
 // ============================================================================
-const BoardKanban: React.FC<{ data: KanbanBoardData; onAddTask:(col:string)=>void; onUpdateCore?:(col:string, taskId:string, patch:Partial<KanbanTask>)=>void }> = ({ data, onAddTask, onUpdateCore }) => {
-  const [editing,setEditing]=React.useState<{col:string; id:string}|null>(null);
-  const [draft,setDraft]=React.useState<{title:string; tags:string; points:string}>({ title:'', tags:'', points:'1' });
-  const startEdit=(col:string,t:KanbanTask)=> { setEditing({col,id:t.id}); setDraft({ title:t.title, tags:t.tags.join(', '), points: String(t.points??'') }); };
-  const commit=()=>{ if(!editing||!onUpdateCore) { setEditing(null); return; } const {col,id}=editing; const tags=draft.tags.split(',').map(s=>s.trim()).filter(Boolean); const pts = draft.points.trim()===''? undefined: Number(draft.points); onUpdateCore(col,id,{ title:draft.title, tags, points: pts } as any); setEditing(null); };
-  const cancel=()=> setEditing(null);
-  return (
-    <div className="overflow-x-auto pb-2">
-      <div className="flex items-start gap-4 min-w-max">
-        {data.order.map(c => (
-          <GlassCard key={c} className="p-3 w-60 shrink-0">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2"><span className="text-sm font-semibold text-slate-100 truncate max-w-[120px]" title={c}>{c}</span><Pill tone={c==='Done'? 'green': c==='Review'? 'amber':'neutral'}>{data.columns[c].length}</Pill></div>
-              <SoftButton onClick={()=> onAddTask(c)} className="text-xs px-2 py-1">Add</SoftButton>
-            </div>
-            <div className="space-y-3">
-              {data.columns[c].map(t => {
-                const isEditing = editing && editing.id===t.id && editing.col===c;
-                return (
-                  <FrostItem key={t.id} className={`p-2.5 ${isEditing? 'ring-1 ring-cyan-400/40':''}`} onDoubleClick={()=> startEdit(c,t)}>
-                    {isEditing ? (
-                      <div className="space-y-2">
-                        <input autoFocus value={draft.title} onChange={e=> setDraft(d=>({...d,title:e.target.value}))} onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); commit(); } if(e.key==='Escape'){ e.preventDefault(); cancel(); } }} className="w-full rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[12px] text-slate-100 outline-none focus:border-cyan-400/40" />
-                        <input value={draft.tags} onChange={e=> setDraft(d=>({...d,tags:e.target.value}))} placeholder="tags comma" className="w-full rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-200 outline-none focus:border-cyan-400/40" />
-                        <input value={draft.points} type="number" onChange={e=> setDraft(d=>({...d,points:e.target.value}))} className="w-20 rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-200 outline-none focus:border-cyan-400/40" />
-                        <div className="flex gap-2 pt-1">
-                          <SoftButton onClick={commit} className="text-[10px] px-2 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200">Save</SoftButton>
-                          <SoftButton onClick={cancel} className="text-[10px] px-2 py-1">Cancel</SoftButton>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex items-start justify-between gap-3">
-                          <div><div className="text-[13px] font-medium text-slate-100 leading-snug" title={t.title}>{t.title}</div><div className="mt-1 flex flex-wrap gap-1">{t.tags.map(tag => <Pill key={tag} tone={tag==='bug'?'red': tag==='devops'?'purple':'blue'}>{tag}</Pill>)}</div></div>
-                          <Assignees ids={t.assignees} />
-                        </div>
-                        <div className="mt-2 flex items-center justify-between text-[10px] text-slate-400"><div className="flex items-center gap-1"><LinkIcon className="h-3.5 w-3.5"/>PR</div><div className="flex items-center gap-1"><Activity className="h-3.5 w-3.5"/>{t.points} pts</div></div>
-                        <div className="mt-1 text-[9px] text-slate-500">(Double‑click to edit)</div>
-                      </>
-                    )}
-                  </FrostItem>
-                );
-              })}
-            </div>
-          </GlassCard>
-        ))}
+const TopBar: React.FC<{ workspaces: Workspace[]; activeWsId: string; setActiveWsId:(id:string)=>void; onTogglePin:(id:string)=>void; projectName?: string; boardName?: string; }> = ({ workspaces, activeWsId, setActiveWsId, onTogglePin, projectName, boardName }) => (
+  <div className="sticky top-0 z-50">
+    <div className="mx-auto -mb-4 max-w-7xl px-4">
+      <div className="relative rounded-2xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-2xl shadow-[0_4px_30px_-4px_rgba(0,0,0,0.55)]">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800" />
+            <span className="hidden sm:block text-[13px] font-semibold tracking-wide text-slate-100">MindSync Work</span>
+            <span className="mx-2 text-slate-600">•</span>
+            <WorkspaceSwitcher workspaces={workspaces} activeId={activeWsId} onSelect={setActiveWsId} onCreate={()=> setShowCreateWs && setShowCreateWs(true)} onTogglePin={onTogglePin} />
+            {projectName && (<><ChevronRight className="h-4 w-4 text-slate-600"/><span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-200">{projectName}</span></>)}
+            {boardName && (<><ChevronRight className="h-4 w-4 text-slate-600"/><span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-200">{boardName}</span></>)}
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-slate-400"><Search className="h-4 w-4"/><input placeholder="Search" className="w-40 bg-transparent text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none"/></div>
+            <SoftButton className="p-2"><Bell className="h-4 w-4 text-slate-300"/></SoftButton>
+            <SoftButton className="text-xs"><Plus className="mr-1 inline h-3.5 w-3.5"/> New</SoftButton>
+          </div>
+        </div>
       </div>
     </div>
-  );
-};
-
-// Table view: one table per column
-const BoardTableView: React.FC<{ data: KanbanBoardData; onAddTask:(col:string)=>void }> = ({ data, onAddTask }) => {
-  return (
-    <div className="space-y-6">
-      {data.order.map(col => {
-        const tasks = data.columns[col];
-        return (
-          <GlassCard key={col} className="overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <div className="flex items-center gap-2"><span className="text-sm font-semibold text-slate-100" title={col}>{col}</span><Pill tone={col==='Done'? 'green': col==='Review'? 'amber':'neutral'}>{tasks.length}</Pill></div>
-              <SoftButton onClick={()=> onAddTask(col)} className="text-xs">+ Task</SoftButton>
-            </div>
-            <div className="max-h-[400px] overflow-auto">
-              <table className="w-full border-separate border-spacing-0 text-xs">
-                <thead><tr className="sticky top-0 backdrop-blur bg-white/5">{['Title','Tags','Assignees','Points'].map(h => <th key={h} className="border-b border-white/10 px-4 py-2 text-left font-medium uppercase tracking-wider text-[10px] text-slate-300">{h}</th>)}</tr></thead>
-                <tbody>
-                  {tasks.map(t => (
-                    <tr key={t.id} className="hover:bg-white/5">
-                      <td className="px-4 py-2 text-slate-100 truncate max-w-[320px]" title={t.title}>{t.title}</td>
-                      <td className="px-4 py-2 text-slate-300"><div className="flex flex-wrap gap-1">{t.tags.map(tag => <Pill key={tag} tone={tag==='bug'?'red': tag==='devops'?'purple':'blue'}>{tag}</Pill>)}</div></td>
-                      <td className="px-4 py-2"><Assignees ids={t.assignees} /></td>
-                      <td className="px-4 py-2 text-slate-300">{t.points}</td>
-                    </tr>
-                  ))}
-                  {tasks.length===0 && <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-500 text-[11px]">No tasks</td></tr>}
-                </tbody>
-              </table>
-            </div>
-          </GlassCard>
-        );
-      })}
-    </div>
-  );
-};
+  </div>
+);
 
 // ============================================================================
 // BOARD SCREEN (secondary nav: board selector + view type pills)
@@ -279,17 +217,17 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
   const [kanbanBoards,setKanbanBoards]=React.useState<Record<string, KanbanBoardData>>({});
   const [addingGroup,setAddingGroup]=React.useState(false);
   const [groupName,setGroupName]=React.useState("");
-  // Development custom field columns per board id -> per phase
   const [devCustomFields,setDevCustomFields]=React.useState<Record<string, Record<string,string[]>>>({});
   const [showAllBoards,setShowAllBoards]=React.useState(false);
   const [boardSearch,setBoardSearch]=React.useState("");
-  // const [boardMenuOpen,setBoardMenuOpen]=React.useState(false); // replaced with menuBoardId
   const [menuBoardId,setMenuBoardId]=React.useState<string|null>(null);
   const [editingBoardId,setEditingBoardId]=React.useState<string|null>(null);
   const [boardNameDraft,setBoardNameDraft]=React.useState("");
   const [menuPos,setMenuPos]=React.useState<{x:number;y:number}|null>(null);
-  React.useEffect(()=>{ setViewType('kanban'); setMenuBoardId(null); setEditingBoardId(null); },[board.id]);
+  
+  React.useEffect(()=>{ setMenuBoardId(null); setEditingBoardId(null); },[board.id]);
   React.useEffect(()=>{ setKanbanBoards(prev=> prev[board.id]? prev : { ...prev, [board.id]: createInitialKanbanData() }); },[board.id]);
+  
   // If Development board, ensure dev column set present & transformed once
   React.useEffect(()=>{
     if(board.name!== 'Development') return;
@@ -309,35 +247,59 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
       return { ...prev, [board.id]: { order: devOrder, columns: newCols } };
     });
   },[board.id, board.name]);
+  
   React.useEffect(()=>{ function onKey(e:KeyboardEvent){ if(e.key==='b' && (e.metaKey||e.ctrlKey)) { e.preventDefault(); setShowAllBoards(true); } } window.addEventListener('keydown',onKey); return ()=> window.removeEventListener('keydown',onKey); },[]);
   React.useEffect(()=>{ function onDoc(e:MouseEvent){ const t=e.target as HTMLElement; if(!t.closest('[data-board-menu]') && !t.closest('[data-board-menu-trigger]')) { setMenuBoardId(null); setMenuPos(null);} } document.addEventListener('mousedown',onDoc); return ()=>document.removeEventListener('mousedown',onDoc); },[]);
+  
   const data = kanbanBoards[board.id];
   const addGroup = (name:string)=> { setKanbanBoards(prev => { const cur = prev[board.id]; if(!cur) return prev; let final=name; let i=2; while(cur.columns[final]) final = `${name}-${i++}`; return { ...prev, [board.id]: { order:[...cur.order, final], columns:{ ...cur.columns, [final]: [] } } }; }); };
   const commitGroup=()=>{ const n=groupName.trim(); if(!n){ setAddingGroup(false); setGroupName(""); return; } addGroup(n); setGroupName(""); setAddingGroup(false); };
+  
   const updateTaskField = (col:string, taskId:string, field:string, value:string)=> {
     setKanbanBoards(prev => {
       const cur = prev[board.id]; if(!cur) return prev; if(!cur.columns[col]) return prev;
       return { ...prev, [board.id]: { ...cur, columns: { ...cur.columns, [col]: cur.columns[col].map(t => t.id===taskId? { ...(t as DevKanbanTask), custom: { ...(t as DevKanbanTask).custom, [field]: value } }: t) } } };
     });
   };
+  
   const updateTaskCore = (col:string, taskId:string, patch:Partial<DevKanbanTask>) => {
     setKanbanBoards(prev => {
       const cur = prev[board.id]; if(!cur) return prev; if(!cur.columns[col]) return prev;
       return { ...prev, [board.id]: { ...cur, columns: { ...cur.columns, [col]: cur.columns[col].map(t => t.id===taskId? { ...(t as DevKanbanTask), ...patch }: t) } } };
     });
   };
+  
   const viewLabel = viewType.charAt(0).toUpperCase()+viewType.slice(1);
   const pinnedSet = new Set(pinnedIds);
-  const pinnedList = boards.filter(b=> pinnedSet.has(b.id));
-  const activePinnedMissing = !pinnedSet.has(board.id);
+  const pinnedBoards = boards.filter(b=> pinnedSet.has(b.id));
+  const unpinnedBoards = boards.filter(b=> !pinnedSet.has(b.id));
+  
+  // Show max 3 boards: pinned first, then unpinned to fill up to 3
+  const displayBoards = [...pinnedBoards];
+  const remainingSlots = 3 - pinnedBoards.length;
+  if (remainingSlots > 0) {
+    // Add unpinned boards to fill remaining slots, prioritizing active board
+    const activeUnpinned = unpinnedBoards.find(b => b.id === board.id);
+    const otherUnpinned = unpinnedBoards.filter(b => b.id !== board.id);
+    
+    if (activeUnpinned && !pinnedSet.has(board.id)) {
+      displayBoards.push(activeUnpinned);
+      displayBoards.push(...otherUnpinned.slice(0, remainingSlots - 1));
+    } else {
+      displayBoards.push(...otherUnpinned.slice(0, remainingSlots));
+    }
+  }
+  
   const filteredBoards = boards.filter(b=> !boardSearch.trim() || b.name.toLowerCase().includes(boardSearch.toLowerCase()));
   const startRename=(id:string,name:string)=>{ setEditingBoardId(id); setBoardNameDraft(name); setMenuBoardId(null); setTimeout(()=>{ const el=document.getElementById('board-rename-input'); el && (el as HTMLInputElement).focus();},0); };
   const commitRename=()=>{ if(!editingBoardId) return; const nm=boardNameDraft.trim(); if(nm) onRenameBoard(editingBoardId,nm); setEditingBoardId(null); };
   const menuBoard = boards.find(b=> b.id===menuBoardId) || null;
+  
   // Clear menu state if selected board no longer exists (e.g. deleted or list re-render)
   React.useEffect(()=> {
     if(menuBoardId && !boards.some(b=> b.id===menuBoardId)) { setMenuBoardId(null); setMenuPos(null); }
   },[menuBoardId, boards]);
+  
   // Add task helper shared by Kanban & Table views
   const addTask = React.useCallback((col:string) => {
     setKanbanBoards(prev => {
@@ -351,14 +313,106 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
       return { ...prev, [board.id]: { ...cur, columns: { ...cur.columns, [col]: [...cur.columns[col], newTask] } } };
     });
   },[board.id, devCustomFields]);
+  
+  // Task modal state & handlers
+  const [taskModal, setTaskModal] = React.useState<{open: boolean; mode: 'new'|'edit'; col: string; task?: KanbanTask}>({open: false, mode: 'new', col: ''});
+  const openNewTaskModal = (col: string) => setTaskModal({open: true, mode: 'new', col});
+  const openEditTaskModal = (col: string, task: KanbanTask) => setTaskModal({open: true, mode: 'edit', col, task});
+  const closeTaskModal = () => setTaskModal(m => ({...m, open: false}));
+  
+  const saveTaskModal = (patch: any) => {
+    setKanbanBoards(prev => {
+      const cur = prev[board.id];
+      if (!cur) return prev;
+      
+      if (taskModal.mode === 'new') {
+        const isDev = board.name === 'Development';
+        const newTask: any = { 
+          id: 't_' + Math.random().toString(36).slice(2,8), 
+          title: patch.title || 'Untitled', 
+          tags: isDev ? [] : (patch.tags || []),
+          labels: isDev ? (patch.labels || []) : [],
+          assignees: patch.assignees || [], 
+          points: patch.points ?? 1,
+          createdAt: Date.now()
+        };
+        
+        // Add dev-specific fields if it's a development board
+        if (isDev) {
+          newTask.type = patch.type || 'Task';
+          newTask.priority = patch.priority || 'Medium';
+          newTask.sprint = patch.sprint;
+          newTask.due = patch.due;
+        }
+        
+        return {
+          ...prev,
+          [board.id]: {
+            ...cur,
+            columns: {
+              ...cur.columns,
+              [taskModal.col]: [...cur.columns[taskModal.col], newTask]
+            }
+          }
+        };
+      } else if (taskModal.mode === 'edit' && taskModal.task) {
+        return {
+          ...prev,
+          [board.id]: {
+            ...cur,
+            columns: {
+              ...cur.columns,
+              [taskModal.col]: cur.columns[taskModal.col].map(t => t.id === taskModal.task!.id ? {...t, ...patch} : t)
+            }
+          }
+        };
+      }
+      return prev;
+    });
+  };
+
+  // Drag and drop functionality
+  const moveTask = (taskId: string, fromCol: string, toCol: string) => {
+    setKanbanBoards(prev => {
+      const cur = prev[board.id];
+      if (!cur || !cur.columns[fromCol] || !cur.columns[toCol]) return prev;
+      
+      const taskIdx = cur.columns[fromCol].findIndex(t => t.id === taskId);
+      if (taskIdx === -1) return prev;
+      
+      const task = cur.columns[fromCol][taskIdx];
+      let updatedTask = { ...task };
+      
+      // Add timestamp when moving to "In Progress"
+      if (toCol === 'In Progress' && !(updatedTask as any).startedAt) {
+        (updatedTask as any).startedAt = Date.now();
+      }
+      
+      const newSource = cur.columns[fromCol].filter(t => t.id !== taskId);
+      const newTarget = [...cur.columns[toCol], updatedTask];
+      
+      return {
+        ...prev,
+        [board.id]: {
+          ...cur,
+          columns: {
+            ...cur.columns,
+            [fromCol]: newSource,
+            [toCol]: newTarget
+          }
+        }
+      };
+    });
+  };
+
   return (
     <div className="space-y-6">
+      {/* Board navigation and view selector */}
       <div className="flex flex-wrap items-center gap-4">
-        {/* Pinned boards pills */}
         <div className="relative flex items-center gap-2 overflow-x-auto max-w-full py-1 pl-1 pr-2 rounded-xl bg-white/5 border border-white/10">
           <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 shrink-0">Boards:</span>
           <div className="flex items-center gap-1">
-            {(pinnedList.length? pinnedList: [board]).map(b => {
+            {displayBoards.map(b => {
               const editing = editingBoardId===b.id; const isActive = b.id===board.id; return (
               <div key={b.id} className="relative group">
                 {editing ? (
@@ -367,6 +421,7 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
                   <button onClick={()=> onSelectBoard(b.id)} className={`relative rounded-lg px-3 py-1.5 text-[12px] font-medium transition group ${isActive? 'bg-cyan-500/25 text-cyan-100 ring-1 ring-cyan-400/40 shadow-[0_0_0_1px_rgba(255,255,255,0.05)]':'bg-white/8 text-slate-300 ring-1 ring-white/10 hover:bg-white/12 hover:text-slate-200'}`} title={b.name}>
                     {b.name}
                     {isActive && <span className="absolute inset-x-1 -bottom-1 h-px bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent"/>}
+                    {pinnedSet.has(b.id) && <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full" title="Pinned"/>}
                   </button>
                 )}
                 {!editing && (
@@ -374,10 +429,9 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
                     data-board-menu-trigger
                     onClick={(e)=> {
                       e.stopPropagation();
-                      // Toggle logic with safe rect capture
                       if(menuBoardId === b.id) { setMenuBoardId(null); setMenuPos(null); return; }
                       const btn = e.currentTarget as HTMLElement | null;
-                      if(!btn) return; // safety
+                      if(!btn) return;
                       const r = btn.getBoundingClientRect();
                       setMenuPos({ x: Math.min(r.left, window.innerWidth-240), y: r.bottom });
                       setMenuBoardId(b.id);
@@ -389,33 +443,10 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
                   </button>
                 )}
               </div> ); })}
-            {activePinnedMissing && pinnedList.length>0 && (
-              <div className="relative group">
-                {editingBoardId===board.id ? (
-                  <input id="board-rename-input" value={boardNameDraft} onChange={e=>setBoardNameDraft(e.target.value)} onBlur={commitRename} onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); commitRename(); } if(e.key==='Escape'){ e.preventDefault(); setEditingBoardId(null); } }} className="rounded-lg px-3 py-1.5 text-[12px] font-medium bg-white/10 border border-cyan-400/40 text-cyan-100 outline-none w-32" />
-                ) : (
-                  <button onClick={()=> onSelectBoard(board.id)} className={`relative rounded-lg px-3 py-1.5 text-[12px] font-medium transition group bg-cyan-500/25 text-cyan-100 ring-1 ring-cyan-400/40 shadow-[0_0_0_1px_rgba(255,255,255,0.05)]`} title={board.name}>
-                    {board.name}
-                    <span className="absolute inset-x-1 -bottom-1 h-px bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent"/>
-                  </button>
-                )}
-                {editingBoardId!==board.id && (
-                  <button data-board-menu-trigger onClick={(e)=> {
-                    e.stopPropagation();
-                    if(menuBoardId === board.id) { setMenuBoardId(null); setMenuPos(null); return; }
-                    const btn = e.currentTarget as HTMLElement | null;
-                    if(!btn) return;
-                    const r = btn.getBoundingClientRect();
-                    setMenuPos({ x: Math.min(r.left, window.innerWidth-240), y: r.bottom });
-                    setMenuBoardId(board.id);
-                  }} className="absolute -right-2 -top-2 rounded-full bg-[#0d141b] border border-white/10 p-1 text-slate-400 hover:text-slate-200 hover:bg-white/10 opacity-0 scale-90 pointer-events-none transition group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto" title="Board actions"><MoreHorizontal className="h-3.5 w-3.5"/></button>
-                )}
-              </div>
-            )}
             <button onClick={()=> setShowAllBoards(true)} className="rounded-lg px-2 py-1.5 text-[12px] font-medium text-slate-300 bg-white/5 hover:bg-white/10 border border-white/10">All Boards</button>
           </div>
-          {/* removed inline cramped menu */}
         </div>
+        
         {/* View selector dropdown */}
         <div className="relative">
           <SoftButton onClick={()=>setOpenViews(o=>!o)} className="gap-2">
@@ -431,9 +462,9 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
             </div>
           )}
         </div>
+        
         {/* Add Group control + Add Board */}
         <div className="flex items-center gap-2">
-          {/* Removed + Table Column from nav – now per-table header */}
           <div className="relative">
             <SoftButton onClick={()=> setAddingGroup(a=>!a)} className="text-xs">+ Group</SoftButton>
             {addingGroup && (
@@ -449,6 +480,7 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
           <SoftButton onClick={onAddBoard} className="text-xs">+ Board</SoftButton>
         </div>
       </div>
+
       {/* All Boards Popover */}
       {showAllBoards && (
         <div className="relative z-50">
@@ -481,6 +513,7 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
           </div>
         </div>
       )}
+      
       {/* Floating board menu via portal (outside scroll clipping) */}
       {menuBoardId && menuPos && menuBoard && createPortal(
         <div
@@ -491,171 +524,55 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
           <div className="px-2 py-1 text-[11px] font-medium text-slate-400 truncate">{menuBoard.name}</div>
           <button onClick={()=>{ startRename(menuBoard.id, menuBoard.name); }} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] text-slate-300 hover:bg-white/10">Rename</button>
           <button onClick={()=>{ onTogglePin(menuBoard.id); setMenuBoardId(null); setMenuPos(null); }} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] text-slate-300 hover:bg-white/10">{pinnedSet.has(menuBoard.id)? 'Unpin':'Pin'}</button>
-            <button onClick={()=>{ if(window.confirm('Delete this board?')) { onDeleteBoard(menuBoard.id); } setMenuBoardId(null); setMenuPos(null); }} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] text-rose-300 hover:bg-rose-500/20">Delete</button>
+          <button onClick={()=>{ if(window.confirm('Delete this board?')) { onDeleteBoard(menuBoard.id); } setMenuBoardId(null); setMenuPos(null); }} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] text-rose-300 hover:bg-rose-500/20">Delete</button>
         </div>,
         document.body
       )}
-      {viewType==='kanban' && data && (board.name==='Development'? <DevKanban data={data} onAddTask={addTask}/> : <BoardKanban data={data} onAddTask={addTask} onUpdateCore={(col,id,patch)=> updateTaskCore(col,id,patch as any)} />)}
-      {viewType==='table' && data && (board.name==='Development'? <DevTableView data={data} onAddTask={addTask} customFieldsMap={devCustomFields[board.id]||{}} onAddField={(phase, name)=> setDevCustomFields(prev=> { const cur = prev[board.id] || {}; const list = cur[phase] || []; if(list.includes(name)) return prev; return { ...prev, [board.id]: { ...cur, [phase]: [...list, name] } }; })} onUpdateField={updateTaskField} onUpdateCore={updateTaskCore}/> : <BoardTableView data={data} onAddTask={addTask} />)}
-      {viewType!=='kanban' && viewType!=='table' && <GlassCard className="p-10 text-center text-sm text-slate-300"><div className="text-base font-semibold text-slate-100 mb-1">{viewLabel} View</div><div className="text-slate-400">Placeholder – coming soon.</div></GlassCard>}
+      
+      {/* View Content */}
+      {viewType==='kanban' && data && (board.name==='Development' ? <DevKanban data={data} onAddTaskViaModal={openNewTaskModal} onOpenEdit={openEditTaskModal} onMoveTask={moveTask} /> : <BoardKanban data={data} onAddTaskViaModal={openNewTaskModal} onOpenEdit={openEditTaskModal} onMoveTask={moveTask} />)}
+      {viewType==='table' && data && <BoardTableView 
+        data={data} 
+        onAddTask={addTask} 
+        onMoveTask={moveTask} 
+        onUpdateField={updateTaskField} 
+        onUpdateCore={updateTaskCore}
+        customFieldsMap={devCustomFields[board.id]||{}}
+        onAddField={(phase: string, name: string) => setDevCustomFields(prev => { 
+          const cur = prev[board.id] || {}; 
+          const list = cur[phase] || []; 
+          if(list.includes(name)) return prev; 
+          return { ...prev, [board.id]: { ...cur, [phase]: [...list, name] } }; 
+        })}
+      />}
+      {viewType==='calendar' && data && <CalendarView data={data} onAddTask={addTask} onEditTask={(col: string, taskId: string) => {
+        const task = data.columns[col]?.find(t => t.id === taskId);
+        if (task) openEditTaskModal(col, task);
+      }} />}
+      {viewType==='gantt' && data && <GanttView data={data} onAddTask={addTask} onEditTask={(col: string, taskId: string) => {
+        const task = data.columns[col]?.find(t => t.id === taskId);
+        if (task) openEditTaskModal(col, task);
+      }} />}
+      {viewType==='timeline' && data && <TimelineView data={data} onAddTask={addTask} onEditTask={(col: string, taskId: string) => {
+        const task = data.columns[col]?.find(t => t.id === taskId);
+        if (task) openEditTaskModal(col, task);
+      }} />}
+      
+      {/* Task Editor Modal */}
+      <TaskEditorModal
+        open={taskModal.open}
+        mode={taskModal.mode}
+        column={taskModal.col}
+        task={taskModal.task}
+        isDev={board.name==='Development'}
+        onClose={closeTaskModal}
+        onSave={(patch: any)=> { saveTaskModal(patch); closeTaskModal(); }}
+      />
     </div>
   );
 };
 
-// ============================================================================
-// TOP BAR
-// ============================================================================
-const TopBar: React.FC<{ workspaces: Workspace[]; activeWsId: string; setActiveWsId:(id:string)=>void; onTogglePin:(id:string)=>void; projectName?: string; boardName?: string; }> = ({ workspaces, activeWsId, setActiveWsId, onTogglePin, projectName, boardName }) => (
-  <div className="sticky top-0 z-50">
-    <div className="mx-auto -mb-4 max-w-7xl px-4">
-      <div className="relative rounded-2xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-2xl shadow-[0_4px_30px_-4px_rgba(0,0,0,0.55)]">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800" />
-            <span className="hidden sm:block text-[13px] font-semibold tracking-wide text-slate-100">MindSync Work</span>
-            <span className="mx-2 text-slate-600">•</span>
-            <WorkspaceSwitcher workspaces={workspaces} activeId={activeWsId} onSelect={setActiveWsId} onCreate={()=> setShowCreateWs && setShowCreateWs(true)} onTogglePin={onTogglePin} />
-            {projectName && (<><ChevronRight className="h-4 w-4 text-slate-600"/><span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-200">{projectName}</span></>)}
-            {boardName && (<><ChevronRight className="h-4 w-4 text-slate-600"/><span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-200">{boardName}</span></>)}
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-slate-400"><Search className="h-4 w-4"/><input placeholder="Search" className="w-40 bg-transparent text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none"/></div>
-            <SoftButton className="p-2"><Bell className="h-4 w-4 text-slate-300"/></SoftButton>
-            <SoftButton className="text-xs"><Plus className="mr-1 inline h-3.5 w-3.5"/> New</SoftButton>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-// ============================================================================
-// MAIN PAGE
-// ============================================================================
-export default function GlassDashboardPage() {
-  const [workspaces,setWorkspaces]=React.useState<Workspace[]>(SEED_WORKSPACES);
-  const [activeWsId,setActiveWsId]=React.useState(workspaces[0].id);
-  const [showCreate,_setShowCreate]=React.useState(false); setShowCreateWs=_setShowCreate;
-  const [sidebarOpen,setSidebarOpen]=React.useState(true);
-  const activeWs = workspaces.find(w=>w.id===activeWsId);
-  const [active,setActive]=React.useState<{projectId?:string; boardId?:string}>({ projectId: activeWs?.projects[0]?.id, boardId: activeWs?.projects[0]?.boards[0]?.id });
-  const [pinnedBoards,setPinnedBoards]=React.useState<Record<string,string[]>>({});
-  // Initialize pinned boards on first load so existing boards show immediately (up to 3)
-  React.useEffect(()=>{
-    if(!activeWs) return;
-    setPinnedBoards(prev => {
-      let changed = false;
-      const next = { ...prev };
-      activeWs.projects.forEach(p => {
-        if(!next[p.id] || next[p.id].length===0) {
-          next[p.id] = p.boards.slice(0,3).map(b=>b.id);
-          changed = true;
-        }
-      });
-      return changed ? next : prev;
-    });
-  },[activeWsId]);
-  React.useEffect(()=>{ const ws=workspaces.find(w=>w.id===activeWsId); setActive({ projectId: ws?.projects[0]?.id, boardId: ws?.projects[0]?.boards[0]?.id }); },[activeWsId, workspaces]);
-  const project = activeWs?.projects.find(p=>p.id===active.projectId);
-  const board = project?.boards.find(b=>b.id===active.boardId);
-  const hasProjects = !!activeWs && activeWs.projects.length>0;
-
-  function handleCreateWorkspace(name:string, template:string){ const ws=seedWorkspaceByTemplate(name, template); setWorkspaces(prev=>[ws,...prev]); setActiveWsId(ws.id); }
-  function togglePinWorkspace(id:string){ setWorkspaces(prev=> prev.map(w=> w.id===id? {...w, pinned: !w.pinned}: w)); }
-  function addProject(){ setWorkspaces(prev=> prev.map(w=> { if(w.id!==activeWsId) return w; const newPid=`p_${Math.random().toString(36).slice(2,8)}`; const newBid=`b_${Math.random().toString(36).slice(2,8)}`; const newProject:Project={ id:newPid, name:`Project ${w.projects.length+1}`, boards:[{ id:newBid, name: `Board 1`, views:[viewHome, viewKanban, viewTable, viewRoadmap] }] }; setTimeout(()=> setActive({ projectId:newPid, boardId:newBid }),0); return { ...w, projects: [...w.projects, newProject] }; })); }
-  function renameProject(pid:string, newName:string){ setWorkspaces(prev=> prev.map(w=> w.id===activeWsId? { ...w, projects: w.projects.map(p=> p.id===pid? {...p, name:newName}: p) }: w)); }
-  function addBoard(projectId:string){
-    setWorkspaces(prev => prev.map(w => {
-      if (w.id !== activeWsId) return w;
-      return {
-        ...w,
-        projects: w.projects.map(p => {
-          if (p.id !== projectId) return p;
-          const existingBoardIds = p.boards.map(b=>b.id); // capture before adding
-          const newBid = `b_${Math.random().toString(36).slice(2,8)}`;
-          const newBoard: Board = { id: newBid, name: `Board ${p.boards.length+1}`, views:[viewHome, viewKanban, viewTable, viewRoadmap] };
-          // defer state side-effects post render
-          setTimeout(() => {
-            setActive(a => a.projectId === projectId ? { ...a, boardId: newBid } : a);
-            setPinnedBoards(pb => {
-              const cur = pb[projectId] || [];
-              if (cur.length === 0) {
-                // First time establishing pins: include all existing boards (pre-add) plus the new one (up to 3)
-                // This ensures if there were 2 boards (e.g., Development, QA) adding a third shows all 3 pinned.
-                let combined = [...existingBoardIds, newBid];
-                // If active board wasn't first in original list, keep original ordering from project definition.
-                // Remove duplicates just in case.
-                combined = combined.filter((id,idx,arr)=> arr.indexOf(id)===idx).slice(0,3);
-                return { ...pb, [projectId]: combined };
-              }
-              if (cur.length < 3 && !cur.includes(newBid)) {
-                return { ...pb, [projectId]: [...cur, newBid] };
-              }
-              return pb;
-            });
-          }, 0);
-          return { ...p, boards: [...p.boards, newBoard] };
-        })
-      };
-    }));
-  }
-  function togglePinBoard(boardId:string){ if(!active.projectId) return; const pid=active.projectId; setPinnedBoards(prev=> { const cur=prev[pid]||[]; const exists=cur.includes(boardId); if(exists) return { ...prev, [pid]: cur.filter(id=>id!==boardId) }; if(cur.length>=3) return prev; return { ...prev, [pid]: [...cur, boardId] }; }); }
-  function deleteProject(projectId:string){ if(!window.confirm('Delete this project?')) return; setWorkspaces(prev=> prev.map(w=> w.id===activeWsId? { ...w, projects: w.projects.filter(p=> p.id!==projectId) }: w)); if(active.projectId===projectId){ const ws=workspaces.find(w=>w.id===activeWsId); const next=ws?.projects.find(p=>p.id!==projectId); setActive({ projectId: next?.id, boardId: next?.boards[0]?.id }); } }
-  function renameBoard(projectId:string, boardId:string, newName:string){ setWorkspaces(prev=> prev.map(w=> w.id===activeWsId? { ...w, projects: w.projects.map(p=> p.id===projectId? { ...p, boards: p.boards.map(b=> b.id===boardId? {...b, name:newName}: b) }: p) }: w)); }
-  function deleteBoard(projectId:string, boardId:string){ setWorkspaces(prev=> prev.map(w=> w.id===activeWsId? { ...w, projects: w.projects.map(p=> { if(p.id!==projectId) return p; const remaining = p.boards.filter(b=> b.id!==boardId); return { ...p, boards: remaining }; }) }: w)); setPinnedBoards(prev=> ({ ...prev, [projectId]: (prev[projectId]||[]).filter(id=> id!==boardId) })); setActive(a=> { if(a.boardId===boardId){ const proj = workspaces.find(w=>w.id===activeWsId)?.projects.find(p=>p.id===projectId); const next = proj?.boards.find(b=> b.id!==boardId); return { projectId, boardId: next?.id }; } return a; }); }
-
-  return (
-    <div className="min-h-screen w-full relative text-slate-100 bg-[#0b1017] bg-[radial-gradient(900px_600px_at_0%_0%,rgba(12,148,196,0.22),transparent),radial-gradient(800px_520px_at_100%_10%,rgba(139,92,246,0.20),transparent),radial-gradient(700px_500px_at_50%_100%,rgba(236,72,153,0.18),transparent),linear-gradient(180deg,#0b1017,#0b1017)]">
-      <div className="pointer-events-none fixed inset-0" style={{ backgroundImage: noiseBg, opacity:0.25 }} />
-      <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(125deg,rgba(255,255,255,0.06),rgba(255,255,255,0.01))] mix-blend-soft-light" />
-      <TopBar workspaces={workspaces} activeWsId={activeWsId} setActiveWsId={setActiveWsId} onTogglePin={togglePinWorkspace} projectName={project?.name} boardName={board?.name} />
-      <main className="relative mx-auto max-w-7xl px-4 py-8">
-        <div className="flex gap-6">
-          {sidebarOpen && (
-            <Sidebar workspace={activeWs} active={active} onSelectProject={(pid)=>{ const proj=activeWs?.projects.find(p=>p.id===pid); setActive({ projectId: pid, boardId: proj?.boards[0]?.id }); }} onAddProject={addProject} onRenameProject={renameProject} onAddBoard={addBoard} onDeleteProject={deleteProject} onCollapse={()=> setSidebarOpen(false)} />
-          )}
-          {!sidebarOpen && (
-            <div className="hidden md:flex w-8 shrink-0 flex-col items-center pt-4 border-r border-white/10">
-              <button onClick={()=>setSidebarOpen(true)} className="rounded-lg border border-white/10 bg-white/5 p-2 text-slate-300 hover:bg-white/10" aria-label="Expand sidebar"><ChevronRight className="h-4 w-4"/></button>
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            {!hasProjects ? (
-              <GlassCard className="grid h-[420px] place-items-center p-10 text-center">
-                <div><h2 className="text-lg font-semibold text-slate-100">This workspace is brand new ✨</h2><p className="mt-1 text-slate-400">Create your first project or use a Quick Start to seed sample data.</p><div className="mt-4 flex items-center justify-center gap-2"><SoftButton onClick={addProject} className="font-medium text-cyan-200 hover:text-cyan-100">New Project</SoftButton><SoftButton onClick={()=> setShowCreateWs && setShowCreateWs(true)} className="font-medium">Quick Start</SoftButton></div></div>
-              </GlassCard>
-            ) : board ? (
-              <BoardScreen board={board} boards={project!.boards} onSelectBoard={(id)=> setActive(a=> ({ ...a, boardId: id }))} onAddBoard={()=> addBoard(project!.id)} pinnedIds={pinnedBoards[project!.id]||[]} onTogglePin={togglePinBoard} onRenameBoard={(bid,newName)=> renameBoard(project!.id,bid,newName)} onDeleteBoard={(bid)=> deleteBoard(project!.id,bid)} />
-            ) : (
-              <GlassCard className="p-6">Select a board to get started.</GlassCard>
-            )}
-          </div>
-        </div>
-      </main>
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div className="md:hidden fixed inset-0 z-40">
-          <div className="absolute inset-0 bg-black/50" onClick={()=>setSidebarOpen(false)} />
-          <div className="absolute left-0 top-0 h-full w-64 bg-[#0b1017] border-r border-white/10 p-4 overflow-y-auto">
-            <div className="mb-4 flex items-center justify-between"><span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Projects</span><button onClick={()=>setSidebarOpen(false)} className="rounded-md px-2 py-1 text-[11px] text-slate-300 hover:bg-white/10">Close</button></div>
-            <div className="space-y-1">
-              {activeWs?.projects.map(p=> (
-                <button key={p.id} onClick={()=>{ const first=p.boards[0]; setActive({ projectId:p.id, boardId:first?.id }); setSidebarOpen(false); }} className={`w-full rounded-lg px-2 py-1.5 text-left text-[13px] ${p.id===active.projectId?'bg-white/12 text-slate-100':'text-slate-300 hover:bg-white/6'}`}>{p.name}</button>
-              ))}
-            </div>
-            <div className="mt-3"><SoftButton onClick={()=>{ addProject(); }} className="w-full justify-center text-xs">+ New Project</SoftButton></div>
-          </div>
-        </div>
-      )}
-      <footer className="relative mx-auto max-w-7xl px-4 pb-10 text-center text-xs text-slate-500">Multi-workspace demo • Board secondary nav • Collapsible sidebar</footer>
-      <CreateWorkspaceModal open={showCreate} onClose={()=> _setShowCreate(false)} onCreate={handleCreateWorkspace} />
-    </div>
-  );
-}
-
 // Development task extensions (non-breaking optional fields)
-// Replaced interface with type alias for compatibility with certain JS parsers
-// interface DevKanbanTask extends KanbanTask { ... }
 type DevKanbanTask = KanbanTask & {
   type?: 'Story'|'Task'|'Bug'|'Spike';
   priority?: 'High'|'Medium'|'Low';
@@ -686,184 +603,413 @@ type DevKanbanTask = KanbanTask & {
   custom?: Record<string,string>; // dynamic table fields
 };
 
-// Priority / risk weight helpers
-const priorityWeight = (p?:string)=> p==='High'?0: p==='Medium'?1: p==='Low'?2: 3;
-const riskWeight = priorityWeight; // same ordering
+// Standard Kanban component for non-dev boards
+const BoardKanban: React.FC<{ data: KanbanBoardData; onAddTaskViaModal:(col:string)=>void; onOpenEdit:(col:string, task:KanbanTask)=>void; onMoveTask:(taskId:string, fromCol:string, toCol:string, newIndex?:number)=>void }> = ({ data, onAddTaskViaModal, onOpenEdit, onMoveTask }) => {
+  const [draggedTask, setDraggedTask] = React.useState<{id:string; col:string} | null>(null);
+  const [dragOverCol, setDragOverCol] = React.useState<string | null>(null);
 
-// Dev-specific Kanban component
-const DevKanban: React.FC<{ data: KanbanBoardData; onAddTask:(col:string)=>void }> = ({ data, onAddTask }) => (
-  <div className="overflow-x-auto pb-2">
-    <div className="flex items-start gap-4 min-w-max">
-      {data.order.map(c => (
-        <GlassCard key={c} className="p-3 w-64 shrink-0">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2"><span className="text-sm font-semibold text-slate-100 truncate max-w-[140px]" title={c}>{c}</span><Pill tone={c==='Done'? 'green': c==='In Review'? 'amber': c==='Ready for QA'? 'purple':'neutral'}>{data.columns[c].length}</Pill></div>
-            <SoftButton onClick={()=> onAddTask(c)} className="text-xs px-2 py-1">Add</SoftButton>
-          </div>
-          <div className="space-y-3">
-            {data.columns[c].map(t => {
-              const dt = t as DevKanbanTask;
-              return (
-                <FrostItem key={t.id} className="p-2.5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-[13px] font-medium text-slate-100 leading-snug truncate max-w-[140px]" title={t.title}>{t.title}</div>
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {(dt.labels||t.tags||[]).slice(0,4).map(tag => <Pill key={tag} tone={tag==='bug'||dt.type==='Bug'?'red': tag==='devops'?'purple':'blue'}>{tag}</Pill>)}
-                        {dt.priority && <Pill tone={dt.priority==='High'?'red': dt.priority==='Medium'?'amber':'neutral'}>{dt.priority[0]}</Pill>}
-                      </div>
-                    </div>
-                    <Assignees ids={t.assignees} />
-                  </div>
-                  {dt.startedAt && <div className="mt-2 text-[10px] text-slate-500 flex items-center gap-1"><Activity className="h-3.5 w-3.5"/>Started {new Date(dt.startedAt).toLocaleDateString()}</div>}
-                </FrostItem>
-              );
-            })}
-          </div>
-        </GlassCard>
-      ))}
-    </div>
-  </div>
-);
+  const handleDragStart = (e: React.DragEvent, task: KanbanTask, col: string) => {
+    setDraggedTask({id: task.id, col});
+    e.dataTransfer.effectAllowed = 'move';
+  };
 
-// Remove previous DevTableView duplicate if exists (kept only dynamic version)
-const DevTableView: React.FC<{ data: KanbanBoardData; onAddTask:(col:string)=>void; customFieldsMap:Record<string,string[]>; onAddField:(phase:string,name:string)=>void; onUpdateField:(col:string, taskId:string, field:string, value:string)=>void; onUpdateCore?:(col:string, taskId:string, patch:Partial<DevKanbanTask>)=>void }> = ({ data, onAddTask, customFieldsMap, onAddField, onUpdateField, onUpdateCore }) => {
-  const columnConfigs: Record<string,{ columns:string[]; sort:(a:DevKanbanTask,b:DevKanbanTask)=>number; wipCap?: number | ((tasks:DevKanbanTask[])=>number) }> = {
-    'Backlog': { columns:['Title','Type','Priority','Points','Labels','Reporter','Created','Epic'], sort:(a,b)=>{ const pw = priorityWeight(a.priority)-priorityWeight(b.priority); if(pw!==0) return pw; return (a.createdAt||0)-(b.createdAt||0); } },
-    'To Do': { columns:['Title','Priority','Points','Assignee','Sprint','Due','Epic'], sort:(a,b)=>{ const pw = priorityWeight(a.priority)-priorityWeight(b.priority); if(pw!==0) return pw; return ((a.due?Date.parse(a.due):Infinity) - (b.due?Date.parse(b.due):Infinity)); } },
-    'In Progress': { columns:['Title','Assignee','Points','Sprint','Branch/PR','CI','Labels','StartedAt'], sort:(a,b)=> (a.startedAt||Infinity)-(b.startedAt||Infinity), wipCap:(tasks)=> Math.ceil(tasks.reduce((s,t)=> s + (t.assignees.length||1),0) * 1.5) },
-    'In Review': { columns:['Title','Assignee','Reviewer','PR','CI','Approvals','Changes?'], sort:(a,b)=> (a.createdInReviewAt||Infinity)-(b.createdInReviewAt||Infinity), wipCap:(tasks)=> tasks.length*1 },
-    'Ready for QA': { columns:['Title','Build/Env','TestSuite','QA Ticket','QA Assignee','Risk'], sort:(a,b)=> { const rw=riskWeight(a.risk)-riskWeight(b.risk); if(rw!==0) return rw; return (a.createdAt||0)-(b.createdAt||0); } },
-    'Done': { columns:['Title','DeployedAt','Release','CycleTime','Reviewer','ClosedBy'], sort:(a,b)=> (b.deployedAt||0)-(a.deployedAt||0) }
+  const handleDragOver = (e: React.DragEvent, col: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverCol(col);
   };
-  const defaultConfig = { columns:['Title','Assignee','Points','Labels'], sort:(a:DevKanbanTask,b:DevKanbanTask)=> (a.createdAt||0)-(b.createdAt||0) };
-  const [addingFieldFor,setAddingFieldFor]=React.useState<string|null>(null);
-  const [fieldValue,setFieldValue]=React.useState("");
-  const [editing,setEditing]=React.useState<{taskId:string; col:string}|null>(null);
-  const [optionSets,setOptionSets] = React.useState<{priority:string[]; type:string[]; risk:string[]; ciStatus:string[]}>({ priority:['Low','Medium','High'], type:['Feature','Bug','Chore','Task'], risk:['Low','Medium','High'], ciStatus:['Passing','Failing','Pending'] });
-  const priorityOptions = optionSets.priority; const typeOptions = optionSets.type; const riskOptions = optionSets.risk; const ciOptions = optionSets.ciStatus;
-  const addCustomOption = (field:keyof typeof optionSets, value:string)=> setOptionSets(prev=> prev[field].includes(value)? prev : { ...prev, [field]: [...prev[field], value] });
-  const commitSelectValue = (val:string, opts:string[], allowCustom=true)=> !opts.includes(val) && val!=='' && allowCustom? val : (val||'');
-  const startEdit = (taskId:string,col:string)=> setEditing({taskId,col});
-  const stopEdit = ()=> setEditing(null);
-  const saveCore = (phase:string, taskId:string, patch:Partial<DevKanbanTask>)=> { onUpdateCore && onUpdateCore(phase, taskId, patch); };
-  const handleSelectChange = (phase:string, taskId:string, field:keyof DevKanbanTask, e:React.ChangeEvent<HTMLSelectElement>)=> {
-    let v = e.target.value;
-    if(v==='__custom') { const custom = window.prompt('Enter custom value'); if(custom && custom.trim()){ v=custom.trim(); if(field==='priority') addCustomOption('priority', v); else if(field==='type') addCustomOption('type', v); else if(field==='risk') addCustomOption('risk', v); else if(field==='ciStatus') addCustomOption('ciStatus', v);} else return; }
-    saveCore(phase, taskId, { [field]: v } as any); stopEdit();
-  };
-  const stopOnBlur = (e:React.FocusEvent<any>)=> { if(e.relatedTarget && (e.currentTarget.contains(e.relatedTarget as Node))) return; stopEdit(); };
-  const renderEditable = (phase:string, t:DevKanbanTask, col:string) => {
-    const isEditing = editing && editing.taskId===t.id && editing.col===col;
-    if(!isEditing){
-      const commonTd = (children:React.ReactNode, extra="") => <td onDoubleClick={()=> startEdit(t.id,col)} className={`px-4 py-2 text-slate-300 cursor-text ${extra}`}>{children}</td>;
-      switch(col){
-        case 'Title': return commonTd(<span className="text-slate-100" title={t.title}>{t.title}</span>, 'max-w-[260px] truncate');
-        case 'Priority': return commonTd(t.priority? <Pill tone={t.priority==='High'?'red': t.priority==='Medium'?'amber':'neutral'}>{t.priority}</Pill>:'—');
-        case 'Type': return commonTd(t.type||'—');
-        case 'Risk': return commonTd(t.risk? <Pill tone={t.risk==='High'?'red': t.risk==='Medium'?'amber':'neutral'}>{t.risk}</Pill>:'—');
-        case 'Points': return commonTd(t.points??'—');
-        case 'Labels': return commonTd(<div className="flex flex-wrap gap-1">{(t.labels||t.tags||[]).slice(0,4).map(l=> <Pill key={l} tone={l==='bug'||t.type==='Bug'?'red':'blue'}>{l}</Pill>)}</div>);
-        case 'Reporter': return commonTd(t.reporter||'—');
-        case 'Epic': return commonTd(t.epicId||'—');
-        case 'Assignee': return commonTd(<Assignees ids={t.assignees}/>);
-        case 'Sprint': return commonTd(t.sprint||'—');
-        case 'Due': return commonTd(t.due||'—');
-        case 'Branch/PR': return commonTd(t.prLink||t.branch||'—');
-        case 'CI': return commonTd(t.ciStatus||'—');
-        case 'StartedAt': return commonTd(t.startedAt? new Date(t.startedAt).toLocaleDateString():'—');
-        case 'Reviewer': return commonTd(t.reviewer||'—');
-        case 'PR': return commonTd(t.prLink? 'PR':'—');
-        case 'Approvals': return commonTd(t.approvals??'—');
-        case 'Changes?': return <td className="px-4 py-2 text-slate-300 cursor-pointer" onClick={()=> saveCore(phase, t.id, { changesRequested: !t.changesRequested })}>{t.changesRequested? 'Yes':'—'}</td>;
-        case 'Build/Env': return commonTd(t.buildEnv||'—');
-        case 'TestSuite': return commonTd(t.testSuite||'—');
-        case 'QA Ticket': return commonTd(t.qaTicketId||'—');
-        case 'QA Assignee': return commonTd(t.qaAssignee||'—');
-        case 'DeployedAt': return commonTd(t.deployedAt? new Date(t.deployedAt).toLocaleDateString():'—');
-        case 'Release': return commonTd(t.release||'—');
-        case 'CycleTime': return commonTd(t.cycleTime? Math.round(t.cycleTime/86400000)+'d':'—');
-        case 'ClosedBy': return commonTd(t.closedBy||'—');
-        case 'Created': return commonTd(t.createdAt? new Date(t.createdAt).toLocaleDateString():'—');
-        default: return commonTd('—');
-      }
+
+  const handleDragLeave = () => setDragOverCol(null);
+
+  const handleDrop = (e: React.DragEvent, toCol: string) => {
+    e.preventDefault();
+    if (!draggedTask) return;
+    if (draggedTask.col !== toCol) {
+      onMoveTask(draggedTask.id, draggedTask.col, toCol);
     }
-    // Editing mode
-    switch(col){
-      case 'Title': return <td className="px-4 py-1"><input autoFocus defaultValue={t.title} onBlur={e=>{ saveCore(phase, t.id, { title:e.target.value }); stopEdit(); }} onKeyDown={e=>{ if(e.key==='Enter'){ saveCore(phase,t.id,{ title:(e.target as HTMLInputElement).value }); stopEdit(); } if(e.key==='Escape'){ stopEdit(); } }} className="w-full rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none focus:border-cyan-400/40"/></td>;
-      case 'Priority': return <td className="px-4 py-1"><select autoFocus defaultValue={commitSelectValue(t.priority||'',priorityOptions)} onChange={e=> handleSelectChange(phase,t.id,'priority',e)} onBlur={stopOnBlur} className="w-full rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"><option value="">—</option>{priorityOptions.map(o=> <option key={o}>{o}</option>)}<option value="__custom">Custom…</option></select></td>;
-      case 'Type': return <td className="px-4 py-1"><select autoFocus defaultValue={commitSelectValue(t.type||'',typeOptions)} onChange={e=> handleSelectChange(phase,t.id,'type',e)} onBlur={stopOnBlur} className="w-full rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"><option value="">—</option>{typeOptions.map(o=> <option key={o}>{o}</option>)}<option value="__custom">Custom…</option></select></td>;
-      case 'Risk': return <td className="px-4 py-1"><select autoFocus defaultValue={commitSelectValue(t.risk||'',riskOptions)} onChange={e=> handleSelectChange(phase,t.id,'risk',e)} onBlur={stopOnBlur} className="w-full rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"><option value="">—</option>{riskOptions.map(o=> <option key={o}>{o}</option>)}<option value="__custom">Custom…</option></select></td>;
-      case 'CI': return <td className="px-4 py-1"><select autoFocus defaultValue={commitSelectValue(t.ciStatus||'',ciOptions)} onChange={e=> handleSelectChange(phase,t.id,'ciStatus',e)} onBlur={stopOnBlur} className="w-full rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"><option value="">—</option>{ciOptions.map(o=> <option key={o}>{o}</option>)}<option value="__custom">Custom…</option></select></td>;
-      case 'Points': return <td className="px-4 py-1"><input type="number" autoFocus defaultValue={t.points??''} onBlur={e=>{ const v=e.target.value; saveCore(phase,t.id,{ points: v===''? undefined: Number(v) }); stopEdit(); }} onKeyDown={e=>{ if(e.key==='Enter'){ const v=(e.target as HTMLInputElement).value; saveCore(phase,t.id,{ points: v===''? undefined: Number(v) }); stopEdit(); } if(e.key==='Escape'){ stopEdit(); } }} className="w-20 rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"/></td>;
-      case 'Approvals': return <td className="px-4 py-1"><input type="number" autoFocus defaultValue={t.approvals??''} onBlur={e=>{ const v=e.target.value; saveCore(phase,t.id,{ approvals: v===''? undefined: Number(v) }); stopEdit(); }} onKeyDown={e=>{ if(e.key==='Enter'){ const v=(e.target as HTMLInputElement).value; saveCore(phase,t.id,{ approvals: v===''? undefined: Number(v) }); stopEdit(); } if(e.key==='Escape'){ stopEdit(); } }} className="w-20 rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"/></td>;
-      case 'Reporter': return <td className="px-4 py-1"><input autoFocus defaultValue={t.reporter||''} onBlur={e=>{ saveCore(phase,t.id,{ reporter:e.target.value||undefined }); stopEdit(); }} onKeyDown={e=>{ if(e.key==='Enter'){ saveCore(phase,t.id,{ reporter:(e.target as HTMLInputElement).value||undefined }); stopEdit(); } if(e.key==='Escape'){ stopEdit(); } }} className="w-full rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"/></td>;
-      case 'Epic': return <td className="px-4 py-1"><input autoFocus defaultValue={t.epicId||''} onBlur={e=>{ saveCore(phase,t.id,{ epicId:e.target.value||undefined }); stopEdit(); }} onKeyDown={e=>{ if(e.key==='Enter'){ saveCore(phase,t.id,{ epicId:(e.target as HTMLInputElement).value||undefined }); stopEdit(); } if(e.key==='Escape'){ stopEdit(); } }} className="w-full rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"/></td>;
-      case 'Sprint': return <td className="px-4 py-1"><input autoFocus defaultValue={t.sprint||''} onBlur={e=>{ saveCore(phase,t.id,{ sprint:e.target.value||undefined }); stopEdit(); }} onKeyDown={e=>{ if(e.key==='Enter'){ saveCore(phase,t.id,{ sprint:(e.target as HTMLInputElement).value||undefined }); stopEdit(); } if(e.key==='Escape'){ stopEdit(); } }} className="w-32 rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"/></td>;
-      case 'Due': return <td className="px-4 py-1"><input type="date" autoFocus defaultValue={t.due||''} onBlur={e=>{ saveCore(phase,t.id,{ due:e.target.value||undefined }); stopEdit(); }} onKeyDown={e=>{ if(e.key==='Enter'){ saveCore(phase,t.id,{ due:(e.target as HTMLInputElement).value||undefined }); stopEdit(); } if(e.key==='Escape'){ stopEdit(); } }} className="rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"/></td>;
-      case 'Branch/PR': return <td className="px-4 py-1"><input autoFocus defaultValue={t.prLink||t.branch||''} onBlur={e=>{ const v=e.target.value.trim(); const patch:Partial<DevKanbanTask>={}; if(v.startsWith('http')) patch.prLink=v; else patch.branch=v; saveCore(phase,t.id,patch); stopEdit(); }} onKeyDown={e=>{ if(e.key==='Enter'){ const v=(e.target as HTMLInputElement).value.trim(); const patch:Partial<DevKanbanTask>={}; if(v.startsWith('http')) patch.prLink=v; else patch.branch=v; saveCore(phase,t.id,patch); stopEdit(); } if(e.key==='Escape'){ stopEdit(); } }} className="w-full rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"/></td>;
-      case 'Build/Env': return <td className="px-4 py-1"><input autoFocus defaultValue={t.buildEnv||''} onBlur={e=>{ saveCore(phase,t.id,{ buildEnv:e.target.value||undefined }); stopEdit(); }} onKeyDown={e=>{ if(e.key==='Enter'){ saveCore(phase,t.id,{ buildEnv:(e.target as HTMLInputElement).value||undefined }); stopEdit(); } if(e.key==='Escape'){ stopEdit(); } }} className="w-40 rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"/></td>;
-      case 'TestSuite': return <td className="px-4 py-1"><input autoFocus defaultValue={t.testSuite||''} onBlur={e=>{ saveCore(phase,t.id,{ testSuite:e.target.value||undefined }); stopEdit(); }} onKeyDown={e=>{ if(e.key==='Enter'){ saveCore(phase,t.id,{ testSuite:(e.target as HTMLInputElement).value||undefined }); stopEdit(); } if(e.key==='Escape'){ stopEdit(); } }} className="w-40 rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"/></td>;
-      case 'QA Ticket': return <td className="px-4 py-1"><input autoFocus defaultValue={t.qaTicketId||''} onBlur={e=>{ saveCore(phase,t.id,{ qaTicketId:e.target.value||undefined }); stopEdit(); }} onKeyDown={e=>{ if(e.key==='Enter'){ saveCore(phase,t.id,{ qaTicketId:(e.target as HTMLInputElement).value||undefined }); stopEdit(); } if(e.key==='Escape'){ stopEdit(); } }} className="w-36 rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"/></td>;
-      case 'QA Assignee': return <td className="px-4 py-1"><input autoFocus defaultValue={t.qaAssignee||''} onBlur={e=>{ saveCore(phase,t.id,{ qaAssignee:e.target.value||undefined }); stopEdit(); }} onKeyDown={e=>{ if(e.key==='Enter'){ saveCore(phase,t.id,{ qaAssignee:(e.target as HTMLInputElement).value||undefined }); stopEdit(); } if(e.key==='Escape'){ stopEdit(); } }} className="w-32 rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"/></td>;
-      case 'DeployedAt': return <td className="px-4 py-1"><input type="date" autoFocus defaultValue={t.deployedAt? new Date(t.deployedAt).toISOString().slice(0,10):''} onBlur={e=>{ saveCore(phase,t.id,{ deployedAt: e.target.value? Date.parse(e.target.value): undefined }); stopEdit(); }} onKeyDown={e=>{ if(e.key==='Enter'){ const v=(e.target as HTMLInputElement).value; saveCore(phase,t.id,{ deployedAt: v? Date.parse(v): undefined }); stopEdit(); } if(e.key==='Escape'){ stopEdit(); } }} className="rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"/></td>;
-      case 'Reviewer': return <td className="px-4 py-1"><input autoFocus defaultValue={t.reviewer||''} onBlur={e=>{ saveCore(phase,t.id,{ reviewer:e.target.value||undefined }); stopEdit(); }} onKeyDown={e=>{ if(e.key==='Enter'){ saveCore(phase,t.id,{ reviewer:(e.target as HTMLInputElement).value||undefined }); stopEdit(); } if(e.key==='Escape'){ stopEdit(); } }} className="w-32 rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"/></td>;
-      case 'ClosedBy': return <td className="px-4 py-1"><input autoFocus defaultValue={t.closedBy||''} onBlur={e=>{ saveCore(phase,t.id,{ closedBy:e.target.value||undefined }); stopEdit(); }} onKeyDown={e=>{ if(e.key==='Enter'){ saveCore(phase,t.id,{ closedBy:(e.target as HTMLInputElement).value||undefined }); stopEdit(); } if(e.key==='Escape'){ stopEdit(); } }} className="w-32 rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-100 outline-none"/></td>;
-      case 'Labels': return <td className="px-4 py-1"><input autoFocus defaultValue={(t.labels||t.tags||[]).join(', ')} onBlur={e=>{ const list=e.target.value.split(',').map(s=>s.trim()).filter(Boolean); saveCore(phase,t.id,{ labels:list.length? list: undefined }); stopEdit(); }} onKeyDown={e=>{ if(e.key==='Enter'){ const list=(e.target as HTMLInputElement).value.split(',').map(s=>s.trim()).filter(Boolean); saveCore(phase,t.id,{ labels:list.length? list: undefined }); stopEdit(); } if(e.key==='Escape'){ stopEdit(); } }} className="w-full rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] outline-none text-slate-100"/></td>;
-      default: return <td className="px-4 py-1"/>;
-    }
+    setDraggedTask(null);
+    setDragOverCol(null);
   };
+
+  const handleDragEnd = () => {
+    setDraggedTask(null);
+    setDragOverCol(null);
+  };
+
   return (
-    <div className="space-y-6">
-      {data.order.map(phase => {
-        const raw = data.columns[phase] as DevKanbanTask[];
-        const baseCfg = columnConfigs[phase] || defaultConfig;
-        const customFields = customFieldsMap[phase] || [];
-        const columns = [...baseCfg.columns, ...customFields];
-        const tasks = [...raw].sort(baseCfg.sort);
-        const wipCap = typeof (columnConfigs[phase]?.wipCap) === 'function'? (columnConfigs[phase]!.wipCap as any)(tasks): columnConfigs[phase]?.wipCap;
-        return (
-          <GlassCard key={phase} className="overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
+    <GlassCard className="p-6">
+      <div className="grid gap-6 lg:grid-cols-3 xl:grid-cols-4">
+        {data.order.map(col => (
+          <div
+            key={col}
+            className={`rounded-xl border p-4 transition ${
+              dragOverCol === col ? 'border-cyan-400/60 bg-cyan-500/10 ring-1 ring-cyan-400/30' : 'border-white/10 bg-white/5'
+            }`}
+            onDragOver={(e) => handleDragOver(e, col)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, col)}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-semibold text-slate-200">{col}</h3>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-slate-100" title={phase}>{phase}</span>
-                <Pill tone={tasks.length===0? 'neutral': phase==='Done'? 'green': phase==='In Review'? 'amber': phase==='Ready for QA'? 'purple':'neutral'}>{tasks.length}</Pill>
-                {wipCap && phase!=='Backlog' && phase!=='Done' && <span className={`text-[10px] font-medium px-2 py-0.5 rounded-md border ${tasks.length> wipCap? 'border-rose-400/40 text-rose-300 bg-rose-500/10':'border-white/10 text-slate-400 bg-white/5'}`}>WIP {tasks.length}/{wipCap}</span>}
-              </div>
-              <div className="flex items-center gap-2">
-                {addingFieldFor===phase ? (
-                  <div className="flex items-center gap-2">
-                    <input value={fieldValue} onChange={e=>setFieldValue(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); if(fieldValue.trim()){ onAddField(phase, fieldValue.trim()); setFieldValue(''); setAddingFieldFor(null);} } if(e.key==='Escape'){ e.preventDefault(); setAddingFieldFor(null); setFieldValue(''); } }} placeholder="Column name" className="mb-3 w-full rounded-md border border-white/10 bg-white/10 px-2 py-1 text-xs text-slate-100 outline-none focus:border-cyan-400/40" />
-                    <SoftButton onClick={()=>{ if(fieldValue.trim()){ onAddField(phase, fieldValue.trim()); setFieldValue(''); setAddingFieldFor(null);} }} className="text-[10px] px-2 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200">Add</SoftButton>
-                    <SoftButton onClick={()=>{ setAddingFieldFor(null); setFieldValue(''); }} className="text-[10px] px-2 py-1">Cancel</SoftButton>
-                  </div>
-                ) : (
-                  <SoftButton onClick={()=> setAddingFieldFor(phase)} className="text-xs">+ Col</SoftButton>
-                )}
-                <SoftButton onClick={()=> onAddTask(phase)} className="text-xs">+ Task</SoftButton>
+                <span className="rounded-full bg-white/10 px-2 py-1 text-xs text-slate-300">{data.columns[col]?.length || 0}</span>
+                <SoftButton onClick={() => onAddTaskViaModal(col)} className="p-1">
+                  <Plus className="h-4 w-4" />
+                </SoftButton>
               </div>
             </div>
-            <div className="max-h-[440px] overflow-auto">
+            <div className="space-y-3">
+              {(data.columns[col] || []).map(task => (
+                <div
+                  key={task.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, task, col)}
+                  onDragEnd={handleDragEnd}
+                  onClick={() => onOpenEdit(col, task)}
+                  className={`cursor-pointer rounded-lg border border-white/10 bg-white/5 p-3 transition hover:bg-white/10 ${
+                    draggedTask?.id === task.id ? 'opacity-50' : ''
+                  }`}
+                >
+                  <div className="mb-2 font-medium text-slate-100">{task.title}</div>
+                  <div className="flex flex-wrap gap-1">
+                    {task.tags?.map((tag, i) => (
+                      <span key={i} className="rounded bg-cyan-500/20 px-2 py-1 text-xs text-cyan-200">{tag}</span>
+                    ))}
+                  </div>
+                  <div className="mt-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Assignees ids={task.assignees || []} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </GlassCard>
+  );
+};
+
+// Dev-specific Kanban component
+const DevKanban: React.FC<{ data: KanbanBoardData; onAddTaskViaModal:(col:string)=>void; onOpenEdit:(col:string, task:KanbanTask)=>void; onMoveTask:(taskId:string, fromCol:string, toCol:string, newIndex?:number)=>void }> = ({ data, onAddTaskViaModal, onOpenEdit, onMoveTask }) => {
+  const [draggedTask, setDraggedTask] = React.useState<{id:string; col:string} | null>(null);
+  const [dragOverCol, setDragOverCol] = React.useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, task: KanbanTask, col: string) => {
+    setDraggedTask({id: task.id, col});
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', task.id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, col: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverCol(col);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear if we're leaving the column entirely
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragOverCol(null);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetCol: string) => {
+    e.preventDefault();
+    if (draggedTask) {
+      onMoveTask(draggedTask.id, draggedTask.col, targetCol);
+    }
+    setDraggedTask(null);
+    setDragOverCol(null);
+  };
+
+  return (
+    <div className="overflow-x-auto pb-2">
+      <div className="flex items-start gap-4 min-w-max">
+        {data.order.map(c => (
+          <GlassCard 
+            key={c} 
+            className={`p-3 w-64 shrink-0 transition-all ${dragOverCol === c ? 'ring-2 ring-cyan-400/40 bg-cyan-500/5' : ''}`}
+            onDragOver={(e) => handleDragOver(e, c)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, c)}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2"><span className="text-sm font-semibold text-slate-100 truncate max-w-[140px]" title={c}>{c}</span><Pill tone={c==='Done'? 'green': c==='Review'? 'amber': c==='Ready for QA'? 'purple':'neutral'}>{data.columns[c].length}</Pill></div>
+              <SoftButton onClick={()=> onAddTaskViaModal(c)} className="text-xs px-2 py-1">Add</SoftButton>
+            </div>
+            <div className="space-y-3 min-h-[100px]">
+              {data.columns[c].map(t => {
+                const dt = t as DevKanbanTask;
+                const isDragging = draggedTask?.id === t.id;
+                return (
+                  <FrostItem 
+                    key={t.id} 
+                    className={`p-2.5 cursor-pointer hover:ring-1 hover:ring-cyan-400/30 transition-all ${isDragging ? 'opacity-50 transform rotate-1 scale-105' : ''}`}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, t, c)}
+                    onDragEnd={() => {setDraggedTask(null); setDragOverCol(null);}}
+                    onClick={()=> onOpenEdit(c,t)}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-[13px] font-medium text-slate-100 leading-snug truncate max-w-[140px]" title={t.title}>{t.title}</div>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {(dt.labels||t.tags||[]).slice(0,4).map(tag => <Pill key={tag} tone={tag==='bug'||dt.type==='Bug'?'red': tag==='devops'?'purple':'blue'}>{tag}</Pill>)}
+                          {dt.priority && <Pill tone={dt.priority==='High'?'red': dt.priority==='Medium'?'amber':'neutral'}>{dt.priority[0]}</Pill>}
+                        </div>
+                      </div>
+                      <Assignees ids={t.assignees} />
+                    </div>
+                    {dt.startedAt && <div className="mt-2 text-[10px] text-slate-500 flex items-center gap-1"><Activity className="h-3.5 w-3.5"/>Started {new Date(dt.startedAt).toLocaleDateString()}</div>}
+                    <div className="mt-1 text-[9px] text-slate-500">(Drag to move • Click to edit)</div>
+                  </FrostItem>
+                );
+              })}
+              {data.columns[c].length === 0 && (
+                <div className="h-24 rounded-lg border-2 border-dashed border-white/10 flex items-center justify-center text-xs text-slate-500">
+                  Drop tasks here
+                </div>
+              )}
+            </div>
+          </GlassCard>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Table view: one table per column
+const BoardTableView: React.FC<{ 
+  data: KanbanBoardData; 
+  onAddTask:(col:string)=>void; 
+  onMoveTask:(taskId:string, fromCol:string, toCol:string, newIndex?:number)=>void;
+  onUpdateField:(col:string, taskId:string, field:string, value:string)=>void;
+  onUpdateCore:(col:string, taskId:string, patch:Partial<DevKanbanTask>)=>void;
+  customFieldsMap: Record<string,string[]>;
+  onAddField:(phase:string, name:string)=>void;
+}> = ({ data, onAddTask, onMoveTask, onUpdateField, onUpdateCore, customFieldsMap, onAddField }) => {
+  const [draggedTask, setDraggedTask] = React.useState<{id:string; col:string} | null>(null);
+  const [dragOverCol, setDragOverCol] = React.useState<string | null>(null);
+  const [editingCell, setEditingCell] = React.useState<{task:string; field:string; col:string}|null>(null);
+  const [customColumns, setCustomColumns] = React.useState<string[]>(['Status', 'Priority', 'Due Date']);
+  const [customOptions, setCustomOptions] = React.useState<Record<string, Set<string>>>({
+    'Priority': new Set(['Low', 'Medium', 'High', 'Critical']),
+    'Status': new Set(['Todo', 'In Progress', 'Review', 'Done']),
+    'Type': new Set(['Task', 'Bug', 'Feature', 'Epic', 'Story'])
+  });
+
+  // Get all custom fields across all columns  
+  const allCustomFields = React.useMemo(() => {
+    const fieldSet = new Set<string>();
+    Object.values(customFieldsMap).forEach(fields => {
+      fields.forEach(field => fieldSet.add(field));
+    });
+    return Array.from(fieldSet);
+  }, [customFieldsMap]);
+
+  const allColumns = ['Title', 'Type', 'Assignees', 'Points', ...customColumns, ...allCustomFields];
+
+  const handleDragStart = (e: React.DragEvent, task: KanbanTask, col: string) => {
+    setDraggedTask({id: task.id, col});
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', task.id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, col: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverCol(col);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetCol: string) => {
+    e.preventDefault();
+    if (draggedTask) {
+      onMoveTask(draggedTask.id, draggedTask.col, targetCol);
+    }
+    setDraggedTask(null);
+    setDragOverCol(null);
+  };
+
+  const addCustomColumn = () => {
+    const name = prompt('Enter column name:');
+    if (name && !customColumns.includes(name)) {
+      setCustomColumns(prev => [...prev, name]);
+      // Also add to all current columns in this board
+      data.order.forEach(col => {
+        onAddField(col, name);
+      });
+    }
+  };
+
+  const renderEditableCell = (value: any, taskId: string, field: string, col: string, options?: string[]) => {
+    const isEditing = editingCell?.task === taskId && editingCell?.field === field && editingCell?.col === col;
+    
+    if (isEditing) {
+      if (options || customOptions[field]) {
+        const allOptions = options || Array.from(customOptions[field] || []);
+        return (
+          <select
+            autoFocus
+            value={value || ''}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              
+              if (newValue === 'ADD_CUSTOM') {
+                const customValue = prompt(`Enter custom ${field}:`);
+                if (customValue) {
+                  // Add to custom options
+                  setCustomOptions(prev => ({
+                    ...prev,
+                    [field]: new Set([...Array.from(prev[field] || []), customValue])
+                  }));
+                  
+                  // Update the task
+                  if (field === 'Type' || field === 'Status' || field === 'Priority') {
+                    onUpdateCore(col, taskId, { [field.toLowerCase()]: customValue } as Partial<DevKanbanTask>);
+                  } else {
+                    onUpdateField(col, taskId, field, customValue);
+                  }
+                }
+              } else {
+                // Regular selection
+                if (field === 'Type' || field === 'Status' || field === 'Priority') {
+                  onUpdateCore(col, taskId, { [field.toLowerCase()]: newValue } as Partial<DevKanbanTask>);
+                } else {
+                  onUpdateField(col, taskId, field, newValue);
+                }
+              }
+              setEditingCell(null);
+            }}
+            onBlur={() => setEditingCell(null)}
+            className="w-full bg-white/10 border border-cyan-400/40 rounded px-2 py-1 text-xs text-slate-100 outline-none"
+          >
+            <option value="">Select...</option>
+            {allOptions.map(opt => (
+              <option key={opt} value={opt} className="bg-slate-800">{opt}</option>
+            ))}
+            <option value="ADD_CUSTOM" className="bg-cyan-900 text-cyan-200">+ Add Custom...</option>
+          </select>
+        );
+      }
+      
+      return (
+        <input
+          autoFocus
+          type={field === 'Points' ? 'number' : field === 'Due Date' ? 'date' : 'text'}
+          value={field === 'Due Date' && value ? new Date(value).toISOString().split('T')[0] : (value || '')}
+          onChange={(e) => {
+            let newValue = e.target.value;
+            
+            if (field === 'Title') {
+              onUpdateCore(col, taskId, { title: newValue } as Partial<DevKanbanTask>);
+            } else if (field === 'Points') {
+              onUpdateCore(col, taskId, { points: newValue ? Number(newValue) : 1 } as Partial<DevKanbanTask>);
+            } else if (field === 'Due Date') {
+              onUpdateCore(col, taskId, { due: newValue || undefined } as Partial<DevKanbanTask>);
+            } else {
+              // Custom fields
+              onUpdateField(col, taskId, field, newValue);
+            }
+            setEditingCell(null);
+          }}
+          onBlur={() => setEditingCell(null)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === 'Escape') setEditingCell(null);
+          }}
+          className="w-full bg-white/10 border border-cyan-400/40 rounded px-2 py-1 text-xs text-slate-100 outline-none"
+        />
+      );
+    }
+
+    return (
+      <div
+        onClick={() => setEditingCell({ task: taskId, field, col })}
+        className="cursor-pointer hover:bg-white/10 px-2 py-1 rounded text-xs min-h-[24px] flex items-center"
+      >
+        {field === 'Due Date' && value ? new Date(value).toLocaleDateString() : (value || '—')}
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {data.order.map(col => {
+        const tasks = data.columns[col];
+        const isDragOver = dragOverCol === col;
+        return (
+          <GlassCard 
+            key={col} 
+            className={`overflow-hidden transition-all ${isDragOver ? 'ring-2 ring-cyan-400/40 bg-cyan-500/5' : ''}`}
+            onDragOver={(e) => handleDragOver(e, col)}
+            onDrop={(e) => handleDrop(e, col)}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-slate-100" title={col}>{col}</span>
+                <Pill tone={col==='Done'? 'green': col==='Review'? 'amber':'neutral'}>{tasks.length}</Pill>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={addCustomColumn}
+                  className="text-cyan-400 hover:text-cyan-300 text-xs px-2 py-1 rounded border border-cyan-400/30 hover:border-cyan-400/50"
+                >
+                  +Col
+                </button>
+                <SoftButton onClick={()=> onAddTask(col)} className="text-xs">+ Task</SoftButton>
+              </div>
+            </div>
+            <div className="max-h-[400px] overflow-auto">
               <table className="w-full border-separate border-spacing-0 text-xs">
-                <thead><tr className="sticky top-0 backdrop-blur bg-white/5">{columns.map(h => <th key={h} className="border-b border-white/10 px-4 py-2 text-left font-medium uppercase tracking-wider text-[10px] text-slate-300">{h}</th>)}</tr></thead>
+                <thead>
+                  <tr className="sticky top-0 backdrop-blur bg-white/5">
+                    {allColumns.map(h => (
+                      <th key={h} className="border-b border-white/10 px-4 py-2 text-left font-medium uppercase tracking-wider text-[10px] text-slate-300">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
                 <tbody>
                   {tasks.map(t => {
-                    const dt = t as DevKanbanTask;
+                    const isDragging = draggedTask?.id === t.id;
                     return (
-                      <tr key={t.id} className="hover:bg-white/5">
-                        {columns.map(col => {
-                          if(customFields.includes(col)) {
-                            const val = (dt.custom||{})[col] || '';
-                            return <td key={col} className="px-4 py-2 text-slate-300 min-w-[120px]">
-                              <input value={val} onChange={e=> onUpdateField(phase, t.id, col, e.target.value)} className="w-full rounded-md bg-white/5 border border-white/10 px-2 py-1 text-[11px] text-slate-200 outline-none focus:border-cyan-400/40" placeholder={col} />
-                            </td>;
-                          }
-                          return <React.Fragment key={col}>{renderEditable(phase, dt, col)}</React.Fragment>;
-                        })}
+                      <tr 
+                        key={t.id} 
+                        className={`hover:bg-white/5 cursor-move transition-all ${isDragging ? 'opacity-50 bg-cyan-500/10' : ''}`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, t, col)}
+                        onDragEnd={() => {setDraggedTask(null); setDragOverCol(null);}}
+                      >
+                        <td className="px-4 py-2 text-slate-100 truncate max-w-[320px]" title={t.title}>
+                          {renderEditableCell(t.title, t.id, 'Title', col)}
+                        </td>
+                        <td className="px-4 py-2 text-slate-300">
+                          {renderEditableCell((t as any).type || 'Task', t.id, 'Type', col, ['Task', 'Bug', 'Feature', 'Epic', 'Story'])}
+                        </td>
+                        <td className="px-4 py-2"><Assignees ids={t.assignees} /></td>
+                        <td className="px-4 py-2 text-slate-300">
+                          {renderEditableCell(t.points, t.id, 'Points', col)}
+                        </td>
+                        {[...customColumns, ...allCustomFields].map(customCol => (
+                          <td key={customCol} className="px-4 py-2 text-slate-300">
+                            {customCol === 'Status' && renderEditableCell((t as any).status || col, t.id, 'Status', col, ['Todo', 'In Progress', 'Review', 'Done'])}
+                            {customCol === 'Priority' && renderEditableCell((t as any).priority || 'Medium', t.id, 'Priority', col, ['Low', 'Medium', 'High', 'Critical'])}
+                            {customCol === 'Due Date' && renderEditableCell((t as any).dueDate, t.id, 'Due Date', col)}
+                            {!['Status', 'Priority', 'Due Date'].includes(customCol) && renderEditableCell((t as any).custom?.[customCol], t.id, customCol, col)}
+                          </td>
+                        ))}
                       </tr>
                     );
                   })}
-                  {tasks.length===0 && <tr><td colSpan={columns.length} className="px-4 py-8 text-center text-slate-500 text-[11px]">No items</td></tr>}
+                  {tasks.length===0 && (
+                    <tr>
+                      <td colSpan={allColumns.length} className="px-4 py-8 text-center text-slate-500 text-[11px]">
+                        {isDragOver ? 'Drop task here' : 'No tasks'}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -873,3 +1019,1002 @@ const DevTableView: React.FC<{ data: KanbanBoardData; onAddTask:(col:string)=>vo
     </div>
   );
 };
+
+// ============================================================================
+// DEVELOPMENT TABLE VIEW (with custom fields)
+// ============================================================================
+const DevTableView: React.FC<{ 
+  data: KanbanBoardData; 
+  onAddTask:(col:string)=>void; 
+  onAddField:(phase:string,name:string)=>void; 
+  onUpdateField:(col:string, taskId:string, field:string, value:string)=>void; 
+  onUpdateCore:(col:string, taskId:string, patch:Partial<DevKanbanTask>)=>void; 
+  customFieldsMap:Record<string,string[]>; 
+}> = ({ data, onAddTask, onAddField, onUpdateField, onUpdateCore, customFieldsMap }) => {
+  const [editingCell, setEditingCell] = React.useState<{task:string; field:string}|null>(null);
+  
+  const allTasks = React.useMemo(() => {
+    const tasks: Array<{task: DevKanbanTask, column: string}> = [];
+    Object.entries(data.columns).forEach(([col, columnTasks]) => {
+      columnTasks.forEach(task => {
+        tasks.push({ task: task as DevKanbanTask, column: col });
+      });
+    });
+    return tasks;
+  }, [data.columns]);
+
+  const allFields = React.useMemo(() => {
+    const fieldSet = new Set<string>();
+    Object.values(customFieldsMap).forEach(fields => {
+      fields.forEach(field => fieldSet.add(field));
+    });
+    return Array.from(fieldSet);
+  }, [customFieldsMap]);
+
+  const renderEditable = (value: any, taskId: string, field: string, col: string, options?: string[]) => {
+    const isEditing = editingCell?.task === taskId && editingCell?.field === field;
+    
+    if (isEditing) {
+      if (options) {
+        return (
+          <select
+            autoFocus
+            value={value || ''}
+            onChange={(e) => {
+              if (field === 'priority' || field === 'type') {
+                onUpdateCore(col, taskId, { [field]: e.target.value });
+              } else {
+                onUpdateField(col, taskId, field, e.target.value);
+              }
+              setEditingCell(null);
+            }}
+            onBlur={() => setEditingCell(null)}
+            className="w-full bg-white/10 border border-cyan-400/40 rounded px-2 py-1 text-xs text-slate-100 outline-none"
+          >
+            {options.map(opt => (
+              <option key={opt} value={opt} className="bg-slate-800">{opt}</option>
+            ))}
+          </select>
+        );
+      }
+      
+      return (
+        <input
+          autoFocus
+          type={field === 'points' ? 'number' : field === 'due' ? 'date' : 'text'}
+          value={field === 'due' && value ? new Date(value).toISOString().split('T')[0] : (value || '')}
+          onChange={(e) => {
+            let newValue = e.target.value;
+            if (field === 'due') newValue = e.target.value;
+            if (field === 'points') newValue = e.target.value;
+            
+            if (field === 'title' || field === 'points' || field === 'due' || field === 'sprint') {
+              const patch: Partial<DevKanbanTask> = {};
+              if (field === 'points') patch.points = newValue ? Number(newValue) : undefined;
+              else if (field === 'due') patch.due = newValue || undefined;
+              else (patch as any)[field] = newValue;
+              onUpdateCore(col, taskId, patch);
+            } else {
+              onUpdateField(col, taskId, field, newValue);
+            }
+            setEditingCell(null);
+          }}
+          onBlur={() => setEditingCell(null)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') setEditingCell(null);
+            if (e.key === 'Escape') setEditingCell(null);
+          }}
+          className="w-full bg-white/10 border border-cyan-400/40 rounded px-2 py-1 text-xs text-slate-100 outline-none"
+        />
+      );
+    }
+
+    return (
+      <div
+        onClick={() => setEditingCell({ task: taskId, field })}
+        className="cursor-pointer hover:bg-white/10 px-2 py-1 rounded text-xs min-h-[24px] flex items-center"
+      >
+        {field === 'due' && value ? new Date(value).toLocaleDateString() : (value || '—')}
+      </div>
+    );
+  };
+
+  return (
+    <GlassCard className="p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-slate-100">Development Tasks</h2>
+        <div className="flex gap-2">
+          {data.order.map(col => (
+            <SoftButton
+              key={col}
+              onClick={() => onAddTask(col)}
+              className="text-xs"
+            >
+              + {col}
+            </SoftButton>
+          ))}
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-white/10">
+              <th className="px-3 py-2 text-left text-xs font-medium text-slate-300">Title</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-slate-300">Status</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-slate-300">Type</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-slate-300">Priority</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-slate-300">Points</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-slate-300">Sprint</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-slate-300">Due</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-slate-300">Assignees</th>
+              {allFields.map(field => (
+                <th key={field} className="px-3 py-2 text-left text-xs font-medium text-slate-300">
+                  {field}
+                </th>
+              ))}
+              <th className="px-3 py-2 text-left text-xs font-medium text-slate-300">
+                <button
+                  onClick={() => {
+                    const name = prompt('Field name:');
+                    if (name) {
+                      const phase = prompt('For which status?', data.order[0]);
+                      if (phase && data.order.includes(phase)) {
+                        onAddField(phase, name);
+                      }
+                    }
+                  }}
+                  className="text-cyan-400 hover:text-cyan-300"
+                >
+                  +Col
+                </button>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {allTasks.map(({ task, column }) => (
+              <tr key={task.id} className="border-b border-white/5 hover:bg-white/5">
+                <td className="px-3 py-2">
+                  {renderEditable(task.title, task.id, 'title', column)}
+                </td>
+                <td className="px-3 py-2">
+                  <span className="px-2 py-1 rounded-full bg-white/10 text-xs text-slate-300">
+                    {column}
+                  </span>
+                </td>
+                <td className="px-3 py-2">
+                  {renderEditable(task.type, task.id, 'type', column, ['Task', 'Bug', 'Feature', 'Epic'])}
+                </td>
+                <td className="px-3 py-2">
+                  {renderEditable(task.priority, task.id, 'priority', column, ['Low', 'Medium', 'High', 'Critical'])}
+                </td>
+                <td className="px-3 py-2">
+                  {renderEditable(task.points, task.id, 'points', column)}
+                </td>
+                <td className="px-3 py-2">
+                  {renderEditable(task.sprint, task.id, 'sprint', column)}
+                </td>
+                <td className="px-3 py-2">
+                  {renderEditable(task.due, task.id, 'due', column)}
+                </td>
+                <td className="px-3 py-2">
+                  <Assignees ids={task.assignees} />
+                </td>
+                {allFields.map(field => (
+                  <td key={field} className="px-3 py-2">
+                    {renderEditable(task.custom?.[field], task.id, field, column, 
+                      customFieldsMap[column]?.includes(field) ? 
+                        ['Option 1', 'Option 2', 'Option 3', 'Custom'] : undefined
+                    )}
+                  </td>
+                ))}
+                <td className="px-3 py-2"></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </GlassCard>
+  );
+};
+
+// ============================================================================
+// TASK EDITOR MODAL
+// ============================================================================
+const TaskEditorModal: React.FC<{ open:boolean; mode:'new'|'edit'; column:string; task?: any; isDev:boolean; onClose:()=>void; onSave:(patch:any)=>void; }> = ({ open, mode, column, task, isDev, onClose, onSave }) => {
+  const [title,setTitle]=React.useState('');
+  const [type,setType]=React.useState('Task');
+  const [priority,setPriority]=React.useState('Medium');
+  const [points,setPoints]=React.useState('1');
+  const [labels,setLabels]=React.useState('');
+  const [assignees,setAssignees]=React.useState<string[]>([]);
+  const [sprint,setSprint]=React.useState('');
+  const [due,setDue]=React.useState('');
+  React.useEffect(()=>{ if(open){ setTitle(task?.title||''); setType(task?.type||'Task'); setPriority(task?.priority||'Medium'); setPoints(String(task?.points??1)); setLabels((task?.labels?.length? task.labels: task?.tags||[]).join(', ')); setAssignees(task?.assignees||[]); setSprint(task?.sprint||''); setDue(task?.due||''); } },[open,task]);
+  if(!open) return null;
+  const toggle=(id:string)=> setAssignees(a=> a.includes(id)? a.filter(x=>x!==id): [...a,id]);
+  const save=()=>{ const pts=points.trim()===''? undefined:Number(points); const arr=labels.split(',').map(s=>s.trim()).filter(Boolean); onSave({ title:title.trim()||'Untitled', points:pts, assignees, tags: !isDev? arr: undefined, labels: isDev? arr: undefined, type:isDev? type: undefined, priority:isDev? priority: undefined, sprint:isDev? (sprint||undefined): undefined, due:isDev? (due||undefined): undefined }); };
+  return createPortal(
+    <div className="fixed inset-0 z-[1200] flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}/>
+      <GlassCard className="relative z-10 w-[520px] max-w-[92vw] p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-slate-100">{mode==='new'? 'New Task':'Edit Task'} • {column}</h3>
+          <button onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-white/10"><X className="h-4 w-4"/></button>
+        </div>
+        <div className="grid grid-cols-2 gap-4 text-xs">
+          <div className="col-span-2">
+            <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-400">Title</label>
+            <input value={title} onChange={e=>setTitle(e.target.value)} className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-400/40"/>
+          </div>
+          {isDev && (
+            <>
+              <div>
+                <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-400">Type</label>
+                <select value={type} onChange={e=>setType(e.target.value)} className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-2 text-xs text-slate-100 outline-none focus:border-cyan-400/40">
+                  {['Story','Task','Bug','Spike'].map(o=> <option key={o}>{o}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-400">Priority</label>
+                <select value={priority} onChange={e=>setPriority(e.target.value)} className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-2 text-xs text-slate-100 outline-none focus:border-cyan-400/40">
+                  {['High','Medium','Low'].map(o=> <option key={o}>{o}</option>)}
+                </select>
+              </div>
+            </>
+          )}
+          <div>
+            <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-400">Points</label>
+            <input type="number" value={points} min={0} onChange={e=>setPoints(e.target.value)} className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-2 text-xs text-slate-100 outline-none"/>
+          </div>
+          {isDev && (
+            <>
+              <div>
+                <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-400">Sprint</label>
+                <input value={sprint} onChange={e=>setSprint(e.target.value)} className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-2 text-xs text-slate-100 outline-none"/>
+              </div>
+              <div>
+                <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-400">Due</label>
+                <input type="date" value={due} onChange={e=>setDue(e.target.value)} className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-2 text-xs text-slate-100 outline-none"/>
+              </div>
+            </>
+          )}
+          <div className="col-span-2">
+            <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-400">{isDev? 'Labels':'Tags'}</label>
+            <input value={labels} onChange={e=>setLabels(e.target.value)} placeholder="frontend, ui" className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-2 text-xs text-slate-100 outline-none"/>
+          </div>
+          <div className="col-span-2">
+            <label className="mb-2 block text-[10px] uppercase tracking-wide text-slate-400">Assignees</label>
+            <div className="flex flex-wrap gap-2">
+              {team.map(u=>{ const active=assignees.includes(u.id); return <button key={u.id} type="button" onClick={()=>toggle(u.id)} className={`px-2 py-1 rounded-md text-[11px] border ${active? 'bg-cyan-500/25 border-cyan-400/40 text-cyan-200':'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'}`}>{u.name}</button>; })}
+            </div>
+          </div>
+        </div>
+        <div className="mt-5 flex justify-end gap-2">
+          <SoftButton onClick={onClose} className="text-xs">Cancel</SoftButton>
+          <SoftButton onClick={()=>{ save(); onClose(); }} className="text-xs bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200">{mode==='new'? 'Create':'Save'}</SoftButton>
+        </div>
+      </GlassCard>
+    </div>, document.body);
+};
+
+// ============================================================================
+// CALENDAR VIEW
+// ============================================================================
+const CalendarView: React.FC<{ data: KanbanBoardData; onAddTask:(col:string)=>void; onEditTask:(col:string, taskId:string)=>void }> = ({ data, onAddTask, onEditTask }) => {
+  const [currentDate, setCurrentDate] = React.useState(new Date());
+  const [viewMode, setViewMode] = React.useState<'month'|'week'>('month');
+  
+  // Get all tasks with due dates
+  const tasksWithDates = React.useMemo(() => {
+    const tasks: Array<{task: DevKanbanTask, column: string}> = [];
+    Object.entries(data.columns).forEach(([col, columnTasks]) => {
+      columnTasks.forEach(task => {
+        const devTask = task as DevKanbanTask;
+        if (devTask.due || devTask.createdAt) {
+          tasks.push({ task: devTask, column: col });
+        }
+      });
+    });
+    return tasks;
+  }, [data]);
+
+  const generateCalendarDays = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    const days = [];
+    for (let i = 0; i < 42; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      days.push(date);
+    }
+    return days;
+  };
+
+  const getTasksForDate = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return tasksWithDates.filter(({ task }) => {
+      if (task.due) {
+        const taskDate = new Date(task.due);
+        return taskDate.toISOString().split('T')[0] === dateStr;
+      }
+      if (task.createdAt) {
+        const taskDate = new Date(task.createdAt);
+        return taskDate.toISOString().split('T')[0] === dateStr;
+      }
+      return false;
+    });
+  };
+
+  const monthNames = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"];
+
+  return (
+    <GlassCard className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-slate-100">
+          {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+        </h2>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 p-1">
+            <button 
+              onClick={() => setViewMode('month')}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition ${viewMode === 'month' ? 'bg-cyan-500/20 text-cyan-200' : 'text-slate-300 hover:text-slate-200'}`}
+            >
+              Month
+            </button>
+            <button 
+              onClick={() => setViewMode('week')}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition ${viewMode === 'week' ? 'bg-cyan-500/20 text-cyan-200' : 'text-slate-300 hover:text-slate-200'}`}
+            >
+              Week
+            </button>
+          </div>
+          <div className="flex items-center gap-1">
+            <SoftButton 
+              onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
+              className="px-2 py-1"
+            >
+              ←
+            </SoftButton>
+            <SoftButton 
+              onClick={() => setCurrentDate(new Date())}
+              className="px-3 py-1 text-xs"
+            >
+              Today
+            </SoftButton>
+            <SoftButton 
+              onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
+              className="px-2 py-1"
+            >
+              →
+            </SoftButton>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+          <div key={day} className="p-2 text-center text-xs font-medium text-slate-400 uppercase tracking-wide">
+            {day}
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-1">
+        {generateCalendarDays().map((date, index) => {
+          const isCurrentMonth = date.getMonth() === currentDate.getMonth();
+          const isToday = date.toDateString() === new Date().toDateString();
+          const dayTasks = getTasksForDate(date);
+
+          return (
+            <div 
+              key={index}
+              className={`min-h-[100px] p-2 border border-white/10 rounded-lg transition ${
+                isCurrentMonth ? 'bg-white/5' : 'bg-white/2 opacity-50'
+              } ${isToday ? 'ring-2 ring-cyan-400/40' : ''}`}
+            >
+              <div className={`text-sm font-medium mb-2 ${isToday ? 'text-cyan-300' : 'text-slate-300'}`}>
+                {date.getDate()}
+              </div>
+              <div className="space-y-1">
+                {dayTasks.slice(0, 3).map(({ task, column }) => (
+                  <div 
+                    key={task.id}
+                    onClick={() => onEditTask(column, task.id)}
+                    className="p-1 rounded text-[10px] text-slate-200 bg-white/10 hover:bg-white/20 cursor-pointer truncate"
+                    title={task.title}
+                  >
+                    <div className="flex items-center gap-1">
+                      <Pill tone={column === 'Done' ? 'green' : column === 'In Progress' ? 'amber' : 'neutral'} className="text-[8px] px-1">
+                        {column.slice(0, 3)}
+                      </Pill>
+                      <span className="truncate">{task.title}</span>
+                    </div>
+                  </div>
+                ))}
+                {dayTasks.length > 3 && (
+                  <div className="text-[9px] text-slate-400">+{dayTasks.length - 3} more</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </GlassCard>
+  );
+};
+
+// ============================================================================
+// GANTT VIEW
+// ============================================================================
+const GanttView: React.FC<{ data: KanbanBoardData; onAddTask:(col:string)=>void; onEditTask:(col:string, taskId:string)=>void }> = ({ data, onAddTask, onEditTask }) => {
+  const [timeRange, setTimeRange] = React.useState<'week'|'month'|'quarter'>('month');
+  const [startDate, setStartDate] = React.useState(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 14); // Start 2 weeks ago
+    return date;
+  });
+
+  // Get all tasks with dates
+  const tasksWithDates = React.useMemo(() => {
+    const tasks: Array<{task: DevKanbanTask, column: string}> = [];
+    Object.entries(data.columns).forEach(([col, columnTasks]) => {
+      columnTasks.forEach(task => {
+        const devTask = task as DevKanbanTask;
+        if (devTask.createdAt || devTask.due || devTask.startedAt) {
+          tasks.push({ task: devTask, column: col });
+        }
+      });
+    });
+    return tasks.sort((a, b) => (a.task.createdAt || 0) - (b.task.createdAt || 0));
+  }, [data]);
+
+  const getStatusColor = (column: string) => {
+    switch (column) {
+      case 'Done': return 'border-emerald-400/40 bg-emerald-500/10';
+      case 'In Progress': return 'border-amber-400/40 bg-amber-500/10';
+      case 'In Review': return 'border-purple-400/40 bg-purple-500/10';
+      case 'Ready for QA': return 'border-cyan-400/40 bg-cyan-500/10';
+      default: return 'border-slate-400/40 bg-slate-500/10';
+    }
+  };
+
+  const formatDate = (timestamp?: number, dateStr?: string) => {
+    if (dateStr) return new Date(dateStr).toLocaleDateString();
+    if (timestamp) return new Date(timestamp).toLocaleDateString();
+    return 'No date';
+  };
+
+  const generateTimeline = () => {
+    const days = timeRange === 'week' ? 7 : timeRange === 'month' ? 30 : 90;
+    const timeline = [];
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      timeline.push(date);
+    }
+    return timeline;
+  };
+
+  const getTaskPosition = (task: DevKanbanTask) => {
+    const timeline = generateTimeline();
+    const startTaskDate = new Date(task.createdAt || Date.now());
+    const endTaskDate = task.due ? new Date(task.due) : new Date(startTaskDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+    
+    const timelineStart = timeline[0];
+    
+    const totalDays = timeline.length;
+    const startOffset = Math.max(0, Math.floor((startTaskDate.getTime() - timelineStart.getTime()) / (24 * 60 * 60 * 1000)));
+    const endOffset = Math.min(totalDays, Math.floor((endTaskDate.getTime() - timelineStart.getTime()) / (24 * 60 * 60 * 1000)));
+    
+    return {
+      left: `${(startOffset / totalDays) * 100}%`,
+      width: `${Math.max(1, ((endOffset - startOffset) / totalDays) * 100)}%`
+    };
+  };
+
+  const timeline = generateTimeline();
+
+  return (
+    <GlassCard className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-slate-100">Gantt Chart</h2>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 p-1">
+            {(['week', 'month', 'quarter'] as const).map(range => (
+              <button 
+                key={range}
+                onClick={() => setTimeRange(range)}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition ${timeRange === range ? 'bg-cyan-500/20 text-cyan-200' : 'text-slate-300 hover:text-slate-200'}`}
+              >
+                {range.charAt(0).toUpperCase() + range.slice(1)}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1">
+            <SoftButton 
+              onClick={() => {
+                const newDate = new Date(startDate);
+                newDate.setDate(startDate.getDate() - (timeRange === 'week' ? 7 : timeRange === 'month' ? 30 : 90));
+                setStartDate(newDate);
+              }}
+              className="px-2 py-1"
+            >
+              ←
+            </SoftButton>
+            <SoftButton 
+              onClick={() => setStartDate(new Date())}
+              className="px-3 py-1 text-xs"
+            >
+              Today
+            </SoftButton>
+            <SoftButton 
+              onClick={() => {
+                const newDate = new Date(startDate);
+                newDate.setDate(startDate.getDate() + (timeRange === 'week' ? 7 : timeRange === 'month' ? 30 : 90));
+                setStartDate(newDate);
+              }}
+              className="px-2 py-1"
+            >
+              →
+            </SoftButton>
+          </div>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        {/* Timeline header */}
+        <div className="flex items-center mb-4">
+          <div className="w-64 shrink-0"></div>
+          <div className="flex-1 flex">
+            {timeline.map((date, index) => (
+              <div key={index} className="flex-1 text-center text-xs text-slate-400 border-l border-white/10 px-1">
+                <div className="font-medium">{date.getDate()}</div>
+                <div className="text-[10px]">{date.toLocaleDateString('en-US', { month: 'short' })}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tasks */}
+        <div className="space-y-3">
+          {tasksWithDates.map(({ task, column }) => {
+            return (
+              <div key={task.id} className="flex items-start gap-4">
+                {/* Timeline dot */}
+                <div className="relative z-10 w-12 h-12 rounded-full border-2 border-white/20 bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center shrink-0">
+                  <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
+                </div>
+                
+                {/* Task card */}
+                <div 
+                  onClick={() => onEditTask(column, task.id)}
+                  className={`flex-1 rounded-lg border p-4 cursor-pointer hover:bg-white/5 transition ${getStatusColor(column)}`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium text-slate-100 mb-2">{task.title}</h4>
+                      <div className="flex items-center gap-3 text-xs text-slate-400">
+                        <span>Created: {formatDate(task.createdAt)}</span>
+                        {task.startedAt && <span>Started: {formatDate(task.startedAt)}</span>}
+                        {task.due && <span>Due: {formatDate(undefined, task.due)}</span>}
+                      </div>
+                      <div className="flex items-center gap-2 mt-3">
+                        {(task.tags || []).map(tag => (
+                          <Pill key={tag} tone={tag === 'bug' ? 'red' : 'blue'} className="text-[10px]">
+                            {tag}
+                          </Pill>
+                        ))}
+                        {task.points && (
+                          <span className="text-xs text-slate-400">{task.points} pts</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      <Assignees ids={task.assignees} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </GlassCard>
+  );
+};
+
+// ============================================================================
+// TIMELINE VIEW
+// ============================================================================
+const TimelineView: React.FC<{ data: KanbanBoardData; onAddTask:(col:string)=>void; onEditTask:(col:string, taskId:string)=>void }> = ({ data, onAddTask, onEditTask }) => {
+  // Group tasks by column and sort by date
+  const groupedTasks = React.useMemo(() => {
+    const groups: Record<string, Array<DevKanbanTask>> = {};
+    
+    Object.entries(data.columns).forEach(([col, tasks]) => {
+      groups[col] = tasks
+        .map(task => task as DevKanbanTask)
+        .filter(task => task.createdAt || task.startedAt || task.due)
+        .sort((a, b) => (a.createdAt || a.startedAt || 0) - (b.createdAt || b.startedAt || 0));
+    });
+    
+    return groups;
+  }, [data]);
+
+  const getStatusColor = (column: string) => {
+    switch (column) {
+      case 'Done': return 'border-emerald-400/40 bg-emerald-500/10';
+      case 'In Progress': return 'border-amber-400/40 bg-amber-500/10';
+      case 'In Review': return 'border-purple-400/40 bg-purple-500/10';
+      case 'Ready for QA': return 'border-cyan-400/40 bg-cyan-500/10';
+      default: return 'border-slate-400/40 bg-slate-500/10';
+    }
+  };
+
+  const formatDate = (timestamp?: number, dateStr?: string) => {
+    if (dateStr) return new Date(dateStr).toLocaleDateString();
+    if (timestamp) return new Date(timestamp).toLocaleDateString();
+    return 'No date';
+  };
+
+  return (
+    <GlassCard className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-slate-100">Timeline View</h2>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-400">Tasks ordered by creation/start date</span>
+        </div>
+      </div>
+
+      <div className="space-y-8">
+        {Object.entries(groupedTasks).map(([column, tasks]) => (
+          <div key={column}>
+            <div className="flex items-center gap-3 mb-4">
+              <h3 className="text-lg font-semibold text-slate-100">{column}</h3>
+              <Pill tone={column === 'Done' ? 'green' : column === 'In Progress' ? 'amber' : 'neutral'}>
+                {tasks.length}
+              </Pill>
+              <SoftButton onClick={() => onAddTask(column)} className="text-xs ml-auto">
+                + Add Task
+              </SoftButton>
+            </div>
+            
+            <div className="relative">
+              {/* Timeline line */}
+              <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-cyan-400/40 to-purple-400/40"></div>
+              
+              <div className="space-y-4">
+                {tasks.map((task) => (
+                  <div key={task.id} className="relative flex items-start gap-4">
+                    {/* Timeline dot */}
+                    <div className="relative z-10 w-12 h-12 rounded-full border-2 border-white/20 bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center shrink-0">
+                      <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
+                    </div>
+                    
+                    {/* Task card */}
+                    <div 
+                      onClick={() => onEditTask(column, task.id)}
+                      className={`flex-1 rounded-lg border p-4 cursor-pointer hover:bg-white/5 transition ${getStatusColor(column)}`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-slate-100 mb-2">{task.title}</h4>
+                          <div className="flex items-center gap-3 text-xs text-slate-400">
+                            <span>Created: {formatDate(task.createdAt)}</span>
+                            {task.startedAt && <span>Started: {formatDate(task.startedAt)}</span>}
+                            {task.due && <span>Due: {formatDate(undefined, task.due)}</span>}
+                          </div>
+                          <div className="flex items-center gap-2 mt-3">
+                            {(task.tags || []).map(tag => (
+                              <Pill key={tag} tone={tag === 'bug' ? 'red' : 'blue'} className="text-[10px]">
+                                {tag}
+                              </Pill>
+                            ))}
+                            {task.points && (
+                              <span className="text-xs text-slate-400">{task.points} pts</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="shrink-0">
+                          <Assignees ids={task.assignees} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {tasks.length === 0 && (
+                  <div className="relative flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center shrink-0">
+                      <Plus className="w-4 h-4 text-slate-400" />
+                    </div>
+                    <div className="flex-1 rounded-lg border-2 border-dashed border-white/10 p-6 text-center">
+                      <span className="text-slate-400">No tasks in {column}</span>
+                      <SoftButton onClick={() => onAddTask(column)} className="ml-3 text-xs">
+                        Add First Task
+                      </SoftButton>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </GlassCard>
+  );
+};
+
+// ============================================================================
+// MAIN PAGE
+// ============================================================================
+const GlassDashboardPage: React.FC = () => {
+  const [workspaces, setWorkspaces] = React.useState<Workspace[]>([
+    { 
+      id: 'ws1', 
+      name: 'Software Development',
+      color: 'bg-cyan-500',
+      projects: [{ 
+        id: 'p1', 
+        name: 'App Development', 
+        boards: [
+          { 
+            id: 'b1', 
+            name: 'Development', 
+            views: [
+              { id: 'v1', name: 'Kanban', kind: 'kanban' },
+              { id: 'v2', name: 'Table', kind: 'table' }
+            ]
+          }, 
+          { 
+            id: 'b2', 
+            name: 'QA', 
+            views: [
+              { id: 'v3', name: 'Kanban', kind: 'kanban' },
+              { id: 'v4', name: 'Table', kind: 'table' }
+            ]
+          }
+        ] 
+      }], 
+      pinned: true 
+    },
+    { 
+      id: 'ws2', 
+      name: 'Marketing',
+      color: 'bg-purple-500',
+      projects: [{ 
+        id: 'p2', 
+        name: 'Product Launch', 
+        boards: [
+          { 
+            id: 'b3', 
+            name: 'Campaigns', 
+            views: [
+              { id: 'v5', name: 'Kanban', kind: 'kanban' },
+              { id: 'v6', name: 'Table', kind: 'table' }
+            ]
+          },
+          { 
+            id: 'b4', 
+            name: 'Content', 
+            views: [
+              { id: 'v7', name: 'Kanban', kind: 'kanban' },
+              { id: 'v8', name: 'Table', kind: 'table' }
+            ]
+          },
+          { 
+            id: 'b5', 
+            name: 'Analytics', 
+            views: [
+              { id: 'v9', name: 'Kanban', kind: 'kanban' },
+              { id: 'v10', name: 'Table', kind: 'table' }
+            ]
+          }
+        ] 
+      }], 
+      pinned: false 
+    }
+  ]);
+  const [activeWsId, setActiveWsId] = React.useState('ws1');
+  const [activeProjectId, setActiveProjectId] = React.useState('p1');
+  const [activeBoardId, setActiveBoardId] = React.useState('b1');
+  const [pinnedBoardIds, setPinnedBoardIds] = React.useState<string[]>(['b1', 'b2']); // Pin Development and QA boards
+  const [showCreateWs, setShowCreateWs] = React.useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+
+  const activeWs = workspaces.find(w => w.id === activeWsId);
+  const activeProject = activeWs?.projects.find(p => p.id === activeProjectId);
+  const boards = activeProject?.boards || [];
+  const activeBoard = boards.find(b => b.id === activeBoardId) || boards[0];
+
+  const togglePinBoard = (id: string) => {
+    setPinnedBoardIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const addBoard = () => {
+    if (!activeProject) return;
+    const timestamp = Date.now();
+    const newBoard: Board = { 
+      id: 'b' + timestamp, 
+      name: 'New Board', 
+      views: [
+        { id: 'v' + timestamp + '1', name: 'Kanban', kind: 'kanban' },
+        { id: 'v' + timestamp + '2', name: 'Table', kind: 'table' }
+      ]
+    };
+    setWorkspaces(prev => prev.map(w => w.id === activeWsId ? {
+      ...w,
+      projects: w.projects.map(p => p.id === activeProjectId ? {
+        ...p,
+        boards: [...p.boards, newBoard]
+      } : p)
+    } : w));
+    setActiveBoardId(newBoard.id);
+  };
+
+  const addBoardToProject = (projectId: string) => {
+    const timestamp = Date.now();
+    const newBoard: Board = { 
+      id: 'b' + timestamp, 
+      name: 'New Board', 
+      views: [
+        { id: 'v' + timestamp + '1', name: 'Kanban', kind: 'kanban' },
+        { id: 'v' + timestamp + '2', name: 'Table', kind: 'table' }
+      ]
+    };
+    setWorkspaces(prev => prev.map(w => w.id === activeWsId ? {
+      ...w,
+      projects: w.projects.map(p => p.id === projectId ? {
+        ...p,
+        boards: [...p.boards, newBoard]
+      } : p)
+    } : w));
+    // Switch to the new board
+    setActiveProjectId(projectId);
+    setActiveBoardId(newBoard.id);
+  };
+
+  const renameBoard = (id: string, newName: string) => {
+    setWorkspaces(prev => prev.map(w => w.id === activeWsId ? {
+      ...w,
+      projects: w.projects.map(p => p.id === activeProjectId ? {
+        ...p,
+        boards: p.boards.map(b => b.id === id ? { ...b, name: newName } : b)
+      } : p)
+    } : w));
+  };
+
+  const deleteBoard = (id: string) => {
+    setWorkspaces(prev => prev.map(w => w.id === activeWsId ? {
+      ...w,
+      projects: w.projects.map(p => p.id === activeProjectId ? {
+        ...p,
+        boards: p.boards.filter(b => b.id !== id)
+      } : p)
+    } : w));
+    
+    const remainingBoards = boards.filter(b => b.id !== id);
+    if (activeBoardId === id && remainingBoards.length > 0) {
+      setActiveBoardId(remainingBoards[0].id);
+    }
+    
+    setPinnedBoardIds(prev => prev.filter(x => x !== id));
+  };
+
+  if (!activeBoard) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black text-white">
+        <div className="flex h-screen items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-semibold text-slate-200 mb-4">No boards available</h1>
+            <SoftButton onClick={addBoard} className="text-sm">Create First Board</SoftButton>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black text-white">
+      <TopBar
+        workspaces={workspaces}
+        activeWsId={activeWsId}
+        setActiveWsId={setActiveWsId}
+        onTogglePin={(id) => setWorkspaces(prev => prev.map(w => w.id === id ? { ...w, pinned: !w.pinned } : w))}
+        projectName={activeProject?.name}
+        boardName={activeBoard.name}
+      />
+
+      <div className="flex">
+        {/* Sidebar */}
+        {!sidebarCollapsed && (
+          <Sidebar
+            workspace={activeWs}
+            active={{ projectId: activeProjectId, boardId: activeBoardId }}
+            onSelectProject={(id) => {
+            setActiveProjectId(id);
+            const project = activeWs?.projects.find(p => p.id === id);
+            if (project?.boards[0]) {
+              setActiveBoardId(project.boards[0].id);
+            }
+          }}
+          onAddProject={() => {
+            // TODO: Implement add project
+            console.log('Add project clicked');
+          }}
+          onRenameProject={(id, newName) => {
+            setWorkspaces(prev => prev.map(w => w.id === activeWsId ? {
+              ...w,
+              projects: w.projects.map(p => p.id === id ? { ...p, name: newName } : p)
+            } : w));
+          }}
+          onDeleteProject={(id) => {
+            if (window.confirm('Delete this project?')) {
+              setWorkspaces(prev => prev.map(w => w.id === activeWsId ? {
+                ...w,
+                projects: w.projects.filter(p => p.id !== id)
+              } : w));
+            }
+          }}
+          onAddBoard={addBoardToProject}
+          onCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
+        )}
+
+        {/* Collapsed Sidebar Toggle */}
+        {sidebarCollapsed && (
+          <div className="pt-4 pl-2">
+            <div className="px-3 py-3 mb-2">
+              <button 
+                onClick={() => setSidebarCollapsed(false)} 
+                className="rounded-md p-2 text-slate-400 hover:text-slate-200 hover:bg-white/10 transition-colors border border-white/10"
+                aria-label="Expand sidebar"
+                title="Expand sidebar"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Main Content */}
+        <div className="flex-1">
+          <div className="mx-auto max-w-7xl px-4 py-6">
+            <BoardScreen
+              board={activeBoard}
+              boards={boards}
+              onSelectBoard={setActiveBoardId}
+              onAddBoard={addBoard}
+              pinnedIds={pinnedBoardIds}
+              onTogglePin={togglePinBoard}
+              onRenameBoard={renameBoard}
+              onDeleteBoard={deleteBoard}
+            />
+          </div>
+        </div>
+      </div>
+
+      {showCreateWs && (
+        <CreateWorkspaceModal
+          open={showCreateWs}
+          onClose={() => setShowCreateWs(false)}
+          onCreate={(name, template) => {
+            const newWs = seedWorkspaceByTemplate(name, template);
+            setWorkspaces(prev => [...prev, newWs]);
+            setActiveWsId(newWs.id);
+            setShowCreateWs(false);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+export default GlassDashboardPage;
