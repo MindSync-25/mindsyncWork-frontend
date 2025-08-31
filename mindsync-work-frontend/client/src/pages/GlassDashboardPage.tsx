@@ -530,7 +530,14 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
       )}
       
       {/* View Content */}
-      {viewType==='kanban' && data && (board.name==='Development' ? <DevKanban data={data} onAddTaskViaModal={openNewTaskModal} onOpenEdit={openEditTaskModal} onMoveTask={moveTask} /> : <BoardKanban data={data} onAddTaskViaModal={openNewTaskModal} onOpenEdit={openEditTaskModal} onMoveTask={moveTask} />)}
+      {viewType==='kanban' && data && (
+        <GlassCard className="p-6 overflow-hidden">
+          {board.name==='Development' ? 
+            <DevKanban data={data} onAddTaskViaModal={openNewTaskModal} onOpenEdit={openEditTaskModal} onMoveTask={moveTask} /> : 
+            <BoardKanban data={data} onAddTaskViaModal={openNewTaskModal} onOpenEdit={openEditTaskModal} onMoveTask={moveTask} />
+          }
+        </GlassCard>
+      )}
       {viewType==='table' && data && <BoardTableView 
         data={data} 
         onAddTask={addTask} 
@@ -637,12 +644,12 @@ const BoardKanban: React.FC<{ data: KanbanBoardData; onAddTaskViaModal:(col:stri
   };
 
   return (
-    <GlassCard className="p-6">
-      <div className="grid gap-6 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="overflow-x-auto pb-2 w-full">
+      <div className="flex items-start gap-4" style={{ minWidth: 'fit-content' }}>
         {data.order.map(col => (
           <div
             key={col}
-            className={`rounded-xl border p-4 transition ${
+            className={`rounded-xl border p-4 transition w-64 shrink-0 ${
               dragOverCol === col ? 'border-cyan-400/60 bg-cyan-500/10 ring-1 ring-cyan-400/30' : 'border-white/10 bg-white/5'
             }`}
             onDragOver={(e) => handleDragOver(e, col)}
@@ -687,7 +694,7 @@ const BoardKanban: React.FC<{ data: KanbanBoardData; onAddTaskViaModal:(col:stri
           </div>
         ))}
       </div>
-    </GlassCard>
+    </div>
   );
 };
 
@@ -1985,7 +1992,7 @@ const GlassDashboardPage: React.FC = () => {
         )}
 
         {/* Main Content */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0 overflow-hidden">
           <div className="mx-auto max-w-7xl px-4 py-6">
             <BoardScreen
               board={activeBoard}
