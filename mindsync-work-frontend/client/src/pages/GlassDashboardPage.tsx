@@ -1,6 +1,6 @@
 import React from "react";
 import { createPortal } from 'react-dom';
-import { Bell, Plus, Search, ChevronDown, ChevronRight, Activity, Star, StarOff, X, Building2, FolderPlus, ChevronLeft, MoreHorizontal, Home, Layers, BarChart3 } from "lucide-react";
+import { Bell, Plus, Search, ChevronDown, ChevronRight, Activity, Star, StarOff, X, Building2, FolderPlus, ChevronLeft, MoreHorizontal, Home, Layers, BarChart3, RefreshCw } from "lucide-react";
 
 // ============================================================================
 // TYPES
@@ -57,11 +57,90 @@ const team = [
 const Avatar: React.FC<{ userId: string; className?: string }> = ({ userId, className }) => { const u = team.find(t=>t.id===userId)!; return <div className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white shadow ${u.color} ${className}`} title={u.name}>{u.name[0]}</div>; };
 const Assignees: React.FC<{ ids: readonly string[] }> = ({ ids }) => <div className="flex -space-x-2">{ids.map(id => <Avatar key={id} userId={id} />)}</div>;
 const kanbanSeed = {
-  Backlog: [ { id: "t1", title: "Implement user auth", tags:["backend"], assignees:["u3"], points:5 }, { id: "t2", title: "Design settings page", tags:["ui/ux"], assignees:["u2"], points:3 } ],
-  Todo: [ { id: "t3", title: "Add invite flow", tags:["frontend"], assignees:["u1"], points:3 } ],
-  "In Progress": [ { id: "t4", title: "CI pipeline for PRs", tags:["devops"], assignees:["u4"], points:5 }, { id: "t5", title: "Board drag & drop", tags:["frontend","ui"], assignees:["u1","u5"], points:8 } ],
-  Review: [ { id: "t6", title: "Bug: avatar overflow", tags:["bug"], assignees:["u2"], points:2 } ],
-  Done: [ { id: "t7", title: "Create project skeleton", tags:["infra"], assignees:["u3"], points:3 } ]
+  Backlog: [ 
+    { 
+      id: "t1", 
+      title: "Implement user auth", 
+      tags:["backend"], 
+      assignees:["u3"], 
+      points:5,
+      comments: [
+        {
+          id: "comment_1",
+          author: "u1",
+          content: "We should use JWT tokens for session management. Make sure to include refresh token logic.",
+          createdAt: Date.now() - 3600000, // 1 hour ago
+        },
+        {
+          id: "comment_2", 
+          author: "u3",
+          content: "Agreed! I'll also add rate limiting for login attempts. Should we use bcrypt for password hashing?",
+          createdAt: Date.now() - 1800000, // 30 minutes ago
+        },
+        {
+          id: "comment_3",
+          author: "u1", 
+          content: "Yes, bcrypt is perfect. Don't forget to validate email format on the frontend too.",
+          createdAt: Date.now() - 900000, // 15 minutes ago
+        }
+      ],
+      subtasks: [
+        { id: "t1_sub1", title: "Setup JWT authentication", tags:["backend"], assignees:["u3"], points:2, parentTaskId: "t1", isSubtask: true, custom: { status: 'done' } },
+        { id: "t1_sub2", title: "Create login API endpoint", tags:["backend"], assignees:["u3"], points:2, parentTaskId: "t1", isSubtask: true, custom: { status: 'todo' }, comments: [
+          {
+            id: "comment_sub_1",
+            author: "u3",
+            content: "Working on the validation logic. Should return proper error codes for different failure scenarios.",
+            createdAt: Date.now() - 1200000, // 20 minutes ago
+          }
+        ] },
+        { id: "t1_sub3", title: "Add password validation", tags:["backend"], assignees:["u3"], points:1, parentTaskId: "t1", isSubtask: true, custom: { status: 'todo' } }
+      ]
+    }, 
+    { id: "t2", title: "Design settings page", tags:["ui/ux"], assignees:["u2"], points:3, subtasks: [] } 
+  ],
+  Todo: [ 
+    { 
+      id: "t3", 
+      title: "Add invite flow", 
+      tags:["frontend"], 
+      assignees:["u1"], 
+      points:3,
+      subtasks: [
+        { id: "t3_sub1", title: "Create invite UI components", tags:["frontend"], assignees:["u1"], points:2, parentTaskId: "t3", isSubtask: true, custom: { status: 'done' } },
+        { id: "t3_sub2", title: "Add email validation", tags:["frontend"], assignees:["u1"], points:1, parentTaskId: "t3", isSubtask: true, custom: { status: 'done' } }
+      ]
+    } 
+  ],
+  "In Progress": [ 
+    { 
+      id: "t4", 
+      title: "CI pipeline for PRs", 
+      tags:["devops"], 
+      assignees:["u4"], 
+      points:5,
+      subtasks: [
+        { id: "t4_sub1", title: "Setup GitHub Actions", tags:["devops"], assignees:["u4"], points:2, parentTaskId: "t4", isSubtask: true, custom: { status: 'done' } },
+        { id: "t4_sub2", title: "Configure test automation", tags:["devops"], assignees:["u4"], points:2, parentTaskId: "t4", isSubtask: true, custom: { status: 'done' } },
+        { id: "t4_sub3", title: "Add deployment pipeline", tags:["devops"], assignees:["u4"], points:1, parentTaskId: "t4", isSubtask: true, custom: { status: 'todo' } }
+      ]
+    }, 
+    { 
+      id: "t5", 
+      title: "Board drag & drop", 
+      tags:["frontend","ui"], 
+      assignees:["u1","u5"], 
+      points:8,
+      subtasks: [
+        { id: "t5_sub1", title: "Implement drag events", tags:["frontend"], assignees:["u1"], points:3, parentTaskId: "t5", isSubtask: true, custom: { status: 'done' } },
+        { id: "t5_sub2", title: "Add drop zones", tags:["frontend"], assignees:["u1"], points:2, parentTaskId: "t5", isSubtask: true, custom: { status: 'todo' } },
+        { id: "t5_sub3", title: "Update UI feedback", tags:["ui"], assignees:["u5"], points:2, parentTaskId: "t5", isSubtask: true, custom: { status: 'todo' } },
+        { id: "t5_sub4", title: "Add visual indicators", tags:["ui"], assignees:["u5"], points:1, parentTaskId: "t5", isSubtask: true, custom: { status: 'todo' } }
+      ]
+    } 
+  ],
+  Review: [ { id: "t6", title: "Bug: avatar overflow", tags:["bug"], assignees:["u2"], points:2, subtasks: [] } ],
+  Done: [ { id: "t7", title: "Create project skeleton", tags:["infra"], assignees:["u3"], points:3, subtasks: [] } ]
 } as const;
 
 // Views kept for template generation
@@ -322,6 +401,111 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
       const cur = prev[board.id]; if(!cur) return prev; if(!cur.columns[col]) return prev;
       return { ...prev, [board.id]: { ...cur, columns: { ...cur.columns, [col]: cur.columns[col].map(t => t.id===taskId? { ...(t as DevKanbanTask), ...patch }: t) } } };
     });
+  };
+
+  // Subtask management functions
+  const addSubtask = (col: string, parentTaskId: string, subtaskTitle: string) => {
+    setKanbanBoards(prev => {
+      const cur = prev[board.id]; 
+      if (!cur || !cur.columns[col]) return prev;
+      
+      const newSubtask: DevKanbanTask = {
+        id: `st_${Math.random().toString(36).slice(2,8)}`,
+        title: subtaskTitle || 'New Subtask',
+        tags: [],
+        labels: [],
+        assignees: [],
+        points: 1,
+        priority: 'Medium',
+        type: 'Task',
+        createdAt: Date.now(),
+        parentTaskId: parentTaskId,
+        isSubtask: true,
+        subtasks: []
+      };
+
+      return {
+        ...prev,
+        [board.id]: {
+          ...cur,
+          columns: {
+            ...cur.columns,
+            [col]: cur.columns[col].map(t => 
+              t.id === parentTaskId 
+                ? { ...(t as DevKanbanTask), subtasks: [...((t as DevKanbanTask).subtasks || []), newSubtask] }
+                : t
+            )
+          }
+        }
+      };
+    });
+  };
+
+  const updateSubtask = (col: string, parentTaskId: string, subtaskId: string, patch: Partial<DevKanbanTask>) => {
+    setKanbanBoards(prev => {
+      const cur = prev[board.id];
+      if (!cur || !cur.columns[col]) return prev;
+      
+      return {
+        ...prev,
+        [board.id]: {
+          ...cur,
+          columns: {
+            ...cur.columns,
+            [col]: cur.columns[col].map(t => 
+              t.id === parentTaskId 
+                ? { 
+                    ...(t as DevKanbanTask), 
+                    subtasks: ((t as DevKanbanTask).subtasks || []).map(st => 
+                      st.id === subtaskId ? { ...st, ...patch } : st
+                    )
+                  }
+                : t
+            )
+          }
+        }
+      };
+    });
+  };
+
+  const deleteSubtask = (col: string, parentTaskId: string, subtaskId: string) => {
+    setKanbanBoards(prev => {
+      const cur = prev[board.id];
+      if (!cur || !cur.columns[col]) return prev;
+      
+      return {
+        ...prev,
+        [board.id]: {
+          ...cur,
+          columns: {
+            ...cur.columns,
+            [col]: cur.columns[col].map(t => 
+              t.id === parentTaskId 
+                ? { 
+                    ...(t as DevKanbanTask), 
+                    subtasks: ((t as DevKanbanTask).subtasks || []).filter(st => st.id !== subtaskId)
+                  }
+                : t
+            )
+          }
+        }
+      };
+    });
+  };
+
+  // Calculate subtask progress for a task
+  const getSubtaskProgress = (task: DevKanbanTask) => {
+    const subtasks = task.subtasks || [];
+    if (subtasks.length === 0) return null;
+    
+    // In a real app, you'd check the status of subtasks
+    // For now, let's simulate some completed subtasks
+    const completedCount = subtasks.filter(st => st.custom?.status === 'done').length;
+    return {
+      completed: completedCount,
+      total: subtasks.length,
+      percentage: Math.round((completedCount / subtasks.length) * 100)
+    };
   };
   
   const viewLabel = viewType.charAt(0).toUpperCase()+viewType.slice(1);
@@ -588,7 +772,15 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
       {viewType==='kanban' && data && (
         <GlassCard className="p-6 overflow-hidden">
           {board.name==='Development' ? 
-            <DevKanban data={data} onAddTaskViaModal={openNewTaskModal} onOpenEdit={openEditTaskModal} onMoveTask={moveTask} /> : 
+            <DevKanban 
+              data={data} 
+              onAddTaskViaModal={openNewTaskModal} 
+              onOpenEdit={openEditTaskModal} 
+              onMoveTask={moveTask}
+              onAddSubtask={addSubtask}
+              onUpdateSubtask={updateSubtask}
+              onDeleteSubtask={deleteSubtask}
+            /> : 
             <BoardKanban data={data} onAddTaskViaModal={openNewTaskModal} onOpenEdit={openEditTaskModal} onMoveTask={moveTask} />
           }
         </GlassCard>
@@ -606,6 +798,9 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
           if(list.includes(name)) return prev; 
           return { ...prev, [board.id]: { ...cur, [phase]: [...list, name] } }; 
         })}
+        onAddSubtask={addSubtask}
+        onUpdateSubtask={updateSubtask}
+        onDeleteSubtask={deleteSubtask}
       />}
       {viewType==='calendar' && data && <CalendarView data={data} onAddTask={addTask} onEditTask={(col: string, taskId: string) => {
         const task = data.columns[col]?.find(t => t.id === taskId);
@@ -633,6 +828,16 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
     </div>
   );
 };
+
+// Comment interface for tasks and subtasks
+interface TaskComment {
+  id: string;
+  author: string; // user id
+  content: string;
+  createdAt: number; // epoch ms
+  updatedAt?: number; // epoch ms if edited
+  isEdited?: boolean;
+}
 
 // Development task extensions (non-breaking optional fields)
 type DevKanbanTask = KanbanTask & {
@@ -663,6 +868,10 @@ type DevKanbanTask = KanbanTask & {
   cycleTime?: number; // ms
   closedBy?: string;
   custom?: Record<string,string>; // dynamic table fields
+  parentTaskId?: string; // For subtasks - references parent task
+  subtasks?: DevKanbanTask[]; // Array of subtasks
+  isSubtask?: boolean; // Flag to identify if this is a subtask
+  comments?: TaskComment[]; // Comments for the task/subtask
 };
 
 // Standard Kanban component for non-dev boards
@@ -754,14 +963,38 @@ const BoardKanban: React.FC<{ data: KanbanBoardData; onAddTaskViaModal:(col:stri
 };
 
 // Dev-specific Kanban component
-const DevKanban: React.FC<{ data: KanbanBoardData; onAddTaskViaModal:(col:string)=>void; onOpenEdit:(col:string, task:KanbanTask)=>void; onMoveTask:(taskId:string, fromCol:string, toCol:string, newIndex?:number)=>void }> = ({ data, onAddTaskViaModal, onOpenEdit, onMoveTask }) => {
-  const [draggedTask, setDraggedTask] = React.useState<{id:string; col:string} | null>(null);
+const DevKanban: React.FC<{ 
+  data: KanbanBoardData; 
+  onAddTaskViaModal:(col:string)=>void; 
+  onOpenEdit:(col:string, task:KanbanTask)=>void; 
+  onMoveTask:(taskId:string, fromCol:string, toCol:string, newIndex?:number)=>void;
+  onAddSubtask?: (col: string, parentTaskId: string, subtaskTitle: string) => void;
+  onUpdateSubtask?: (col: string, parentTaskId: string, subtaskId: string, patch: Partial<DevKanbanTask>) => void;
+  onDeleteSubtask?: (col: string, parentTaskId: string, subtaskId: string) => void;
+}> = ({ data, onAddTaskViaModal, onOpenEdit, onMoveTask, onAddSubtask, onUpdateSubtask, onDeleteSubtask }) => {
+  const [draggedTask, setDraggedTask] = React.useState<{id:string; col:string; isSubtask?: boolean; parentId?: string} | null>(null);
   const [dragOverCol, setDragOverCol] = React.useState<string | null>(null);
+  const [isDraggingSubtask, setIsDraggingSubtask] = React.useState(false);
+  const [subtaskModal, setSubtaskModal] = React.useState<{
+    open: boolean;
+    mode: 'edit';
+    column: string;
+    parentTask?: DevKanbanTask;
+    subtask?: DevKanbanTask;
+  }>({ open: false, mode: 'edit', column: '' });
 
-  const handleDragStart = (e: React.DragEvent, task: KanbanTask, col: string) => {
-    setDraggedTask({id: task.id, col});
+  const handleDragStart = (e: React.DragEvent, task: KanbanTask, col: string, isSubtask = false, parentId?: string) => {
+    console.log('🎯 Drag start:', { taskId: task.id, isSubtask, parentId, col });
+    
+    setDraggedTask({id: task.id, col, isSubtask, parentId});
+    setIsDraggingSubtask(isSubtask);
+    
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', task.id);
+    
+    if (isSubtask) {
+      e.stopPropagation();
+    }
   };
 
   const handleDragOver = (e: React.DragEvent, col: string) => {
@@ -780,10 +1013,60 @@ const DevKanban: React.FC<{ data: KanbanBoardData; onAddTaskViaModal:(col:string
   const handleDrop = (e: React.DragEvent, targetCol: string) => {
     e.preventDefault();
     if (draggedTask) {
-      onMoveTask(draggedTask.id, draggedTask.col, targetCol);
+      console.log('Drop triggered:', { draggedTask, targetCol });
+      if (draggedTask.isSubtask && draggedTask.parentId) {
+        // For subtasks, we need to update the subtask's status
+        console.log('Dropping subtask');
+        if (onUpdateSubtask) {
+          const statusMap: { [key: string]: string } = {
+            'Backlog': 'todo',
+            'To Do': 'todo',
+            'In Progress': 'in-progress', 
+            'In Review': 'review',
+            'Ready for QA': 'qa',
+            'Done': 'done'
+          };
+          const newStatus = statusMap[targetCol] || 'todo';
+          console.log('Updating subtask status:', { 
+            col: draggedTask.col, 
+            parentId: draggedTask.parentId, 
+            subtaskId: draggedTask.id, 
+            newStatus 
+          });
+          onUpdateSubtask(draggedTask.col, draggedTask.parentId, draggedTask.id, { 
+            custom: { status: newStatus } 
+          });
+        } else {
+          console.log('onUpdateSubtask not available');
+        }
+      } else {
+        // For main tasks, use the existing move function
+        console.log('Dropping main task');
+        onMoveTask(draggedTask.id, draggedTask.col, targetCol);
+      }
     }
     setDraggedTask(null);
     setDragOverCol(null);
+  };
+
+  const openSubtaskModal = (col: string, parentTask: DevKanbanTask, subtask: DevKanbanTask) => {
+    setSubtaskModal({
+      open: true,
+      mode: 'edit',
+      column: col,
+      parentTask,
+      subtask
+    });
+  };
+
+  const closeSubtaskModal = () => {
+    setSubtaskModal(prev => ({ ...prev, open: false }));
+  };
+
+  const saveSubtaskModal = (patch: Partial<DevKanbanTask>) => {
+    if (subtaskModal.subtask && subtaskModal.parentTask && onUpdateSubtask) {
+      onUpdateSubtask(subtaskModal.column, subtaskModal.parentTask.id, subtaskModal.subtask.id, patch);
+    }
   };
 
   return (
@@ -805,28 +1088,139 @@ const DevKanban: React.FC<{ data: KanbanBoardData; onAddTaskViaModal:(col:string
               {data.columns[c].map(t => {
                 const dt = t as DevKanbanTask;
                 const isDragging = draggedTask?.id === t.id;
+                const subtasks = dt.subtasks || [];
+                const completedSubtasks = subtasks.filter(st => st.custom?.status === 'done').length;
+                const hasSubtasks = subtasks.length > 0;
+                
                 return (
-                  <FrostItem 
-                    key={t.id} 
-                    className={`p-2.5 cursor-pointer hover:ring-1 hover:ring-cyan-400/30 transition-all ${isDragging ? 'opacity-50 transform rotate-1 scale-105' : ''}`}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, t, c)}
-                    onDragEnd={() => {setDraggedTask(null); setDragOverCol(null);}}
-                    onClick={()=> onOpenEdit(c,t)}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="text-[13px] font-medium text-slate-100 leading-snug truncate max-w-[140px]" title={t.title}>{t.title}</div>
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {(dt.labels||t.tags||[]).slice(0,4).map(tag => <Pill key={tag} tone={tag==='bug'||dt.type==='Bug'?'red': tag==='devops'?'purple':'blue'}>{tag}</Pill>)}
-                          {dt.priority && <Pill tone={dt.priority==='High'?'red': dt.priority==='Medium'?'amber':'neutral'}>{dt.priority[0]}</Pill>}
+                  <div key={t.id} className="space-y-2">
+                    {/* Main Task Card */}
+                    <FrostItem 
+                      className={`p-2.5 cursor-pointer hover:ring-1 hover:ring-cyan-400/30 transition-all ${isDragging && !draggedTask?.isSubtask ? 'opacity-50 transform rotate-1 scale-105' : ''} ${isDraggingSubtask ? 'pointer-events-none' : ''}`}
+                      draggable={!isDraggingSubtask}
+                      onDragStart={(e) => {
+                        // Only allow main task drag if no subtask is being dragged
+                        if (isDraggingSubtask) {
+                          e.preventDefault();
+                          return;
+                        }
+                        handleDragStart(e, t, c);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedTask(null); 
+                        setDragOverCol(null);
+                        setIsDraggingSubtask(false);
+                      }}
+                      onClick={()=> onOpenEdit(c,t)}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-[13px] font-medium text-slate-100 leading-snug truncate max-w-[140px]" title={t.title}>{t.title}</div>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {(dt.labels||t.tags||[]).slice(0,4).map(tag => <Pill key={tag} tone={tag==='bug'||dt.type==='Bug'?'red': tag==='devops'?'purple':'blue'}>{tag}</Pill>)}
+                            {dt.priority && <Pill tone={dt.priority==='High'?'red': dt.priority==='Medium'?'amber':'neutral'}>{dt.priority[0]}</Pill>}
+                          </div>
+                          {/* Subtask Progress */}
+                          {hasSubtasks && (
+                            <div className="mt-2">
+                              <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                                <span>{completedSubtasks}/{subtasks.length} subtasks</span>
+                                <div className="flex-1 bg-white/10 rounded-full h-1.5">
+                                  <div 
+                                    className="bg-emerald-500 h-1.5 rounded-full transition-all" 
+                                    style={{width: `${subtasks.length > 0 ? (completedSubtasks / subtasks.length) * 100 : 0}%`}}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
+                        <Assignees ids={t.assignees} />
                       </div>
-                      <Assignees ids={t.assignees} />
-                    </div>
-                    {dt.startedAt && <div className="mt-2 text-[10px] text-slate-500 flex items-center gap-1"><Activity className="h-3.5 w-3.5"/>Started {new Date(dt.startedAt).toLocaleDateString()}</div>}
-                    <div className="mt-1 text-[9px] text-slate-500">(Drag to move • Click to edit)</div>
-                  </FrostItem>
+                      {dt.startedAt && <div className="mt-2 text-[10px] text-slate-500 flex items-center gap-1"><Activity className="h-3.5 w-3.5"/>Started {new Date(dt.startedAt).toLocaleDateString()}</div>}
+                      <div className="mt-1 text-[9px] text-slate-500">(Drag to move • Click to edit)</div>
+                    </FrostItem>
+                    
+                    {/* Subtask Cards */}
+                    {hasSubtasks && (
+                      <div className="ml-4 space-y-1.5">
+                        {subtasks.map(subtask => (
+                          <div 
+                            key={subtask.id}
+                            className={`bg-white/5 border border-white/10 rounded-lg p-2 text-xs hover:bg-white/10 transition-colors cursor-grab active:cursor-grabbing ${
+                              draggedTask?.id === subtask.id && draggedTask?.isSubtask ? 'opacity-50 transform rotate-1 scale-105 ring-2 ring-cyan-400/50' : ''
+                            }`}
+                            draggable
+                            onDragStart={(e) => {
+                              e.stopPropagation();
+                              console.log('=== SUBTASK DRAG START ===');
+                              console.log('Subtask ID:', subtask.id);
+                              console.log('Parent task ID:', t.id);
+                              console.log('Column:', c);
+                              handleDragStart(e, subtask, c, true, t.id);
+                            }}
+                            onDragEnd={(e) => {
+                              e.stopPropagation();
+                              console.log('🔚 Subtask drag end');
+                              setDraggedTask(null); 
+                              setDragOverCol(null);
+                              setIsDraggingSubtask(false);
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Check if clicked on checkbox area
+                              const clickedElement = e.target as HTMLElement;
+                              const isCheckboxClick = clickedElement.closest('.subtask-checkbox') !== null;
+                              
+                              if (isCheckboxClick && onUpdateSubtask) {
+                                const newStatus = subtask.custom?.status === 'done' ? 'todo' : 'done';
+                                onUpdateSubtask(c, t.id, subtask.id, { 
+                                  custom: { ...subtask.custom, status: newStatus } 
+                                });
+                              } else {
+                                // Open edit modal
+                                openSubtaskModal(c, t as DevKanbanTask, subtask);
+                              }
+                            }}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="text-slate-600 hover:text-slate-400 transition-colors">
+                                <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
+                                  <circle cx="2" cy="2" r="0.5"/>
+                                  <circle cx="6" cy="2" r="0.5"/>
+                                  <circle cx="2" cy="6" r="0.5"/>
+                                  <circle cx="6" cy="6" r="0.5"/>
+                                </svg>
+                              </div>
+                              <div className={`subtask-checkbox w-3 h-3 rounded border transition-colors ${
+                                subtask.custom?.status === 'done' 
+                                  ? 'bg-emerald-500 border-emerald-500' 
+                                  : 'border-slate-400 hover:border-slate-300'
+                              }`}>
+                                {subtask.custom?.status === 'done' && (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                                  </div>
+                                )}
+                              </div>
+                              <span className={`flex-1 text-slate-200 truncate transition-all ${
+                                subtask.custom?.status === 'done' ? 'line-through opacity-60' : ''
+                              }`}>
+                                {subtask.title}
+                              </span>
+                              {subtask.assignees && subtask.assignees.length > 0 && (
+                                <div className="flex -space-x-1">
+                                  {subtask.assignees.slice(0, 2).map(id => (
+                                    <Avatar key={id} userId={id} className="w-4 h-4 text-[8px]" />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
               {data.columns[c].length === 0 && (
@@ -838,11 +1232,373 @@ const DevKanban: React.FC<{ data: KanbanBoardData; onAddTaskViaModal:(col:string
           </GlassCard>
         ))}
       </div>
+      
+      {/* Subtask Editor Modal */}
+      <SubtaskEditorModal
+        open={subtaskModal.open}
+        mode={subtaskModal.mode}
+        column={subtaskModal.column}
+        parentTask={subtaskModal.parentTask}
+        subtask={subtaskModal.subtask}
+        onClose={closeSubtaskModal}
+        onSave={(patch: any) => { saveSubtaskModal(patch); closeSubtaskModal(); }}
+        onDelete={() => {
+          if (subtaskModal.subtask && subtaskModal.parentTask && onDeleteSubtask) {
+            onDeleteSubtask(subtaskModal.column, subtaskModal.parentTask.id, subtaskModal.subtask.id);
+            closeSubtaskModal();
+          }
+        }}
+      />
     </div>
   );
 };
 
-// Table view: one table per column
+// ============================================================================
+// COMMENTS SECTION COMPONENT
+// ============================================================================
+const CommentsSection: React.FC<{
+  comments: TaskComment[];
+  onAddComment: (content: string) => void;
+  onEditComment: (commentId: string, content: string) => void;
+  onDeleteComment: (commentId: string) => void;
+}> = ({ comments, onAddComment, onEditComment, onDeleteComment }) => {
+  const [newComment, setNewComment] = React.useState('');
+  const [editingComment, setEditingComment] = React.useState<string | null>(null);
+  const [editContent, setEditContent] = React.useState('');
+
+  const handleAddComment = () => {
+    if (newComment.trim()) {
+      onAddComment(newComment.trim());
+      setNewComment('');
+    }
+  };
+
+  const startEdit = (comment: TaskComment) => {
+    setEditingComment(comment.id);
+    setEditContent(comment.content);
+  };
+
+  const saveEdit = () => {
+    if (editingComment && editContent.trim()) {
+      onEditComment(editingComment, editContent.trim());
+      setEditingComment(null);
+      setEditContent('');
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingComment(null);
+    setEditContent('');
+  };
+
+  const formatTimeAgo = (timestamp: number) => {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  };
+
+  const getUserName = (userId: string) => {
+    const user = team.find(u => u.id === userId);
+    return user ? user.name : 'Unknown User';
+  };
+
+  return (
+    <div className="border-t border-white/10 pt-4 mt-4">
+      <label className="mb-3 block text-[10px] uppercase tracking-wide text-slate-400">
+        Comments ({comments.length})
+      </label>
+      
+      {/* Comments List */}
+      <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
+        {comments.map((comment) => (
+          <div key={comment.id} className="bg-white/5 rounded-lg p-3 border border-white/10">
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-slate-200">
+                  {getUserName(comment.author)}
+                </span>
+                <span className="text-[10px] text-slate-400">
+                  {formatTimeAgo(comment.createdAt)}
+                  {comment.isEdited && <span className="ml-1">(edited)</span>}
+                </span>
+              </div>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => startEdit(comment)}
+                  className="text-slate-400 hover:text-slate-200 text-xs px-1"
+                  title="Edit comment"
+                >
+                  ✏️
+                </button>
+                <button
+                  onClick={() => onDeleteComment(comment.id)}
+                  className="text-slate-400 hover:text-red-300 text-xs px-1"
+                  title="Delete comment"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+            
+            {editingComment === comment.id ? (
+              <div className="space-y-2">
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-400/40 resize-none"
+                  rows={2}
+                  placeholder="Edit your comment..."
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={saveEdit}
+                    className="px-2 py-1 text-xs bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 rounded border border-cyan-400/20"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={cancelEdit}
+                    className="px-2 py-1 text-xs bg-white/5 hover:bg-white/10 text-slate-300 rounded border border-white/10"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-200 whitespace-pre-wrap">{comment.content}</p>
+            )}
+          </div>
+        ))}
+        
+        {comments.length === 0 && (
+          <div className="text-center py-6 text-slate-400 text-sm">
+            No comments yet. Be the first to comment!
+          </div>
+        )}
+      </div>
+      
+      {/* Add New Comment */}
+      <div className="space-y-2">
+        <textarea
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+          className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-400/40 resize-none"
+          rows={3}
+          placeholder="Add a comment..."
+          onKeyPress={(e) => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+              handleAddComment();
+            }
+          }}
+        />
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-slate-400">
+            Press Ctrl+Enter to post
+          </span>
+          <SoftButton
+            onClick={handleAddComment}
+            className="text-xs bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200"
+            disabled={!newComment.trim()}
+          >
+            Add Comment
+          </SoftButton>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// SUBTASK EDITOR MODAL
+// ============================================================================
+const SubtaskEditorModal: React.FC<{ 
+  open: boolean; 
+  mode: 'edit'; 
+  column: string; 
+  parentTask?: DevKanbanTask;
+  subtask?: DevKanbanTask; 
+  onClose: () => void; 
+  onSave: (patch: any) => void;
+  onDelete: () => void;
+}> = ({ open, mode, column, parentTask, subtask, onClose, onSave, onDelete }) => {
+  const [title, setTitle] = React.useState('');
+  const [type, setType] = React.useState('Subtask');
+  const [priority, setPriority] = React.useState('Medium');
+  const [points, setPoints] = React.useState('1');
+  const [assignees, setAssignees] = React.useState<string[]>([]);
+  const [status, setStatus] = React.useState('todo');
+  const [comments, setComments] = React.useState<TaskComment[]>([]);
+
+  React.useEffect(() => { 
+    if (open && subtask) { 
+      setTitle(subtask.title || ''); 
+      setType(subtask.type || 'Subtask'); 
+      setPriority(subtask.priority || 'Medium'); 
+      setPoints(String(subtask.points ?? 1)); 
+      setAssignees(subtask.assignees || []); 
+      setStatus(subtask.custom?.status || 'todo');
+      setComments(subtask.comments || []);
+    } 
+  }, [open, subtask]);
+
+  if (!open || !subtask || !parentTask) return null;
+
+  const toggle = (id: string) => setAssignees(a => a.includes(id) ? a.filter(x => x !== id) : [...a, id]);
+  
+  const handleAddComment = (content: string) => {
+    const newComment: TaskComment = {
+      id: `comment_${Date.now()}_${Math.random()}`,
+      author: 'u1', // Current user - you can replace with actual user context
+      content,
+      createdAt: Date.now()
+    };
+    setComments([...comments, newComment]);
+  };
+
+  const handleEditComment = (commentId: string, content: string) => {
+    setComments(comments.map(c => 
+      c.id === commentId 
+        ? { ...c, content, updatedAt: Date.now(), isEdited: true }
+        : c
+    ));
+  };
+
+  const handleDeleteComment = (commentId: string) => {
+    setComments(comments.filter(c => c.id !== commentId));
+  };
+  
+  const save = () => { 
+    const pts = points.trim() === '' ? undefined : Number(points); 
+    onSave({ 
+      title: title.trim() || 'Untitled Subtask', 
+      points: pts, 
+      assignees, 
+      type,
+      priority,
+      custom: { status },
+      comments
+    }); 
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-[1200] flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <GlassCard className="relative z-10 w-[520px] max-w-[92vw] max-h-[90vh] p-0 flex flex-col">
+        <div className="p-5 pb-0 flex items-center justify-between shrink-0">
+          <h3 className="text-sm font-semibold text-slate-100">Edit Subtask • {column}</h3>
+          <button onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-white/10">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto p-5">
+          <div className="mb-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+            <div className="text-xs text-slate-400 mb-1">Parent Task</div>
+            <div className="text-sm text-slate-200">{parentTask.title}</div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 text-xs">
+            <div className="col-span-2">
+              <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-400">Title</label>
+              <input 
+                value={title} 
+                onChange={e => setTitle(e.target.value)} 
+                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-400/40"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-400">Type</label>
+              <select 
+                value={type} 
+                onChange={e => setType(e.target.value)} 
+                className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-2 text-xs text-slate-100 outline-none focus:border-cyan-400/40"
+              >
+                {['Subtask', 'Task', 'Bug'].map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-400">Priority</label>
+              <select 
+                value={priority} 
+                onChange={e => setPriority(e.target.value)} 
+                className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-2 text-xs text-slate-100 outline-none focus:border-cyan-400/40"
+              >
+                {['High', 'Medium', 'Low'].map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-400">Points</label>
+              <input 
+                type="number" 
+                value={points} 
+                min={0} 
+                onChange={e => setPoints(e.target.value)} 
+                className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-2 text-xs text-slate-100 outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-400">Status</label>
+              <select 
+                value={status} 
+                onChange={e => setStatus(e.target.value)} 
+                className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-2 text-xs text-slate-100 outline-none focus:border-cyan-400/40"
+              >
+                {['todo', 'in-progress', 'review', 'done'].map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div className="col-span-2">
+              <label className="mb-2 block text-[10px] uppercase tracking-wide text-slate-400">Assignees</label>
+              <div className="flex flex-wrap gap-2">
+                {team.map(u => { 
+                  const active = assignees.includes(u.id); 
+                  return (
+                    <button 
+                      key={u.id} 
+                      type="button" 
+                      onClick={() => toggle(u.id)} 
+                      className={`px-2 py-1 rounded-md text-[11px] border ${active ? 'bg-cyan-500/25 border-cyan-400/40 text-cyan-200' : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'}`}
+                    >
+                      {u.name}
+                    </button>
+                  ); 
+                })}
+              </div>
+            </div>
+          </div>
+          {/* Comments Section */}
+          <CommentsSection
+            comments={comments}
+            onAddComment={handleAddComment}
+            onEditComment={handleEditComment}
+            onDeleteComment={handleDeleteComment}
+          />
+        </div>
+        <div className="p-5 pt-0 shrink-0 flex justify-between">
+          <button 
+            onClick={onDelete}
+            className="px-3 py-1.5 text-xs bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-md border border-red-400/20 hover:border-red-400/40 transition-colors"
+          >
+            Delete Subtask
+          </button>
+          <div className="flex gap-2">
+            <SoftButton onClick={onClose} className="text-xs">Cancel</SoftButton>
+            <SoftButton onClick={() => { save(); }} className="text-xs bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200">Save</SoftButton>
+          </div>
+        </div>
+      </GlassCard>
+    </div>, 
+    document.body
+  );
+};
+
+// ============================================================================
+// TABLE VIEW
+// ============================================================================
 const BoardTableView: React.FC<{ 
   data: KanbanBoardData; 
   onAddTask:(col:string)=>void; 
@@ -851,10 +1607,15 @@ const BoardTableView: React.FC<{
   onUpdateCore:(col:string, taskId:string, patch:Partial<DevKanbanTask>)=>void;
   customFieldsMap: Record<string,string[]>;
   onAddField:(phase:string, name:string)=>void;
-}> = ({ data, onAddTask, onMoveTask, onUpdateField, onUpdateCore, customFieldsMap, onAddField }) => {
+  onAddSubtask?: (col: string, parentTaskId: string, subtaskTitle: string) => void;
+  onUpdateSubtask?: (col: string, parentTaskId: string, subtaskId: string, patch: Partial<DevKanbanTask>) => void;
+  onDeleteSubtask?: (col: string, parentTaskId: string, subtaskId: string) => void;
+}> = ({ data, onAddTask, onMoveTask, onUpdateField, onUpdateCore, customFieldsMap, onAddField, onAddSubtask, onUpdateSubtask, onDeleteSubtask }) => {
   const [draggedTask, setDraggedTask] = React.useState<{id:string; col:string} | null>(null);
   const [dragOverCol, setDragOverCol] = React.useState<string | null>(null);
   const [editingCell, setEditingCell] = React.useState<{task:string; field:string; col:string}|null>(null);
+  const [expandedTasks, setExpandedTasks] = React.useState<Set<string>>(new Set());
+  const [newSubtaskTitle, setNewSubtaskTitle] = React.useState<Record<string, string>>({});
   const [customColumns, setCustomColumns] = React.useState<string[]>(['Status', 'Priority', 'Due Date']);
   const [customOptions, setCustomOptions] = React.useState<Record<string, Set<string>>>({
     'Priority': new Set(['Low', 'Medium', 'High', 'Critical']),
@@ -872,6 +1633,52 @@ const BoardTableView: React.FC<{
   }, [customFieldsMap]);
 
   const allColumns = ['Title', 'Type', 'Assignees', 'Points', ...customColumns, ...allCustomFields];
+
+  const toggleTaskExpansion = (taskId: string) => {
+    setExpandedTasks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
+  };
+
+  const addSubtaskToTask = (col: string, parentTaskId: string) => {
+    const title = newSubtaskTitle[parentTaskId]?.trim();
+    if (title && onAddSubtask) {
+      onAddSubtask(col, parentTaskId, title);
+      setNewSubtaskTitle(prev => ({ ...prev, [parentTaskId]: '' }));
+      setExpandedTasks(prev => new Set([...prev, parentTaskId])); // Auto-expand to show new subtask
+    }
+  };
+
+  const toggleSubtaskStatus = (col: string, parentTaskId: string, subtaskId: string, currentStatus: string) => {
+    if (onUpdateSubtask) {
+      const newStatus = currentStatus === 'done' ? 'todo' : 'done';
+      onUpdateSubtask(col, parentTaskId, subtaskId, {
+        custom: { status: newStatus }
+      });
+    }
+  };
+
+  // Helper function to find if a taskId is a subtask and get its parent
+  const findSubtaskParent = (taskId: string, col: string) => {
+    const tasks = data.columns[col] || [];
+    for (const task of tasks) {
+      const devTask = task as DevKanbanTask;
+      if (devTask.subtasks) {
+        for (const subtask of devTask.subtasks) {
+          if (subtask.id === taskId) {
+            return task.id;
+          }
+        }
+      }
+    }
+    return null;
+  };
 
   const handleDragStart = (e: React.DragEvent, task: KanbanTask, col: string) => {
     setDraggedTask({id: task.id, col});
@@ -928,18 +1735,40 @@ const BoardTableView: React.FC<{
                   }));
                   
                   // Update the task
-                  if (field === 'Type' || field === 'Status' || field === 'Priority') {
-                    onUpdateCore(col, taskId, { [field.toLowerCase()]: customValue } as Partial<DevKanbanTask>);
+                  const parentTaskId = findSubtaskParent(taskId, col);
+                  if (parentTaskId && onUpdateSubtask) {
+                    // This is a subtask
+                    if (field === 'Type' || field === 'Status' || field === 'Priority') {
+                      onUpdateSubtask(col, parentTaskId, taskId, { [field.toLowerCase()]: customValue } as Partial<DevKanbanTask>);
+                    } else {
+                      onUpdateSubtask(col, parentTaskId, taskId, { custom: { [field]: customValue } } as Partial<DevKanbanTask>);
+                    }
                   } else {
-                    onUpdateField(col, taskId, field, customValue);
+                    // This is a main task
+                    if (field === 'Type' || field === 'Status' || field === 'Priority') {
+                      onUpdateCore(col, taskId, { [field.toLowerCase()]: customValue } as Partial<DevKanbanTask>);
+                    } else {
+                      onUpdateField(col, taskId, field, customValue);
+                    }
                   }
                 }
               } else {
                 // Regular selection
-                if (field === 'Type' || field === 'Status' || field === 'Priority') {
-                  onUpdateCore(col, taskId, { [field.toLowerCase()]: newValue } as Partial<DevKanbanTask>);
+                const parentTaskId = findSubtaskParent(taskId, col);
+                if (parentTaskId && onUpdateSubtask) {
+                  // This is a subtask
+                  if (field === 'Type' || field === 'Status' || field === 'Priority') {
+                    onUpdateSubtask(col, parentTaskId, taskId, { [field.toLowerCase()]: newValue } as Partial<DevKanbanTask>);
+                  } else {
+                    onUpdateSubtask(col, parentTaskId, taskId, { custom: { [field]: newValue } } as Partial<DevKanbanTask>);
+                  }
                 } else {
-                  onUpdateField(col, taskId, field, newValue);
+                  // This is a main task
+                  if (field === 'Type' || field === 'Status' || field === 'Priority') {
+                    onUpdateCore(col, taskId, { [field.toLowerCase()]: newValue } as Partial<DevKanbanTask>);
+                  } else {
+                    onUpdateField(col, taskId, field, newValue);
+                  }
                 }
               }
               setEditingCell(null);
@@ -964,15 +1793,31 @@ const BoardTableView: React.FC<{
           onChange={(e) => {
             let newValue = e.target.value;
             
-            if (field === 'Title') {
-              onUpdateCore(col, taskId, { title: newValue } as Partial<DevKanbanTask>);
-            } else if (field === 'Points') {
-              onUpdateCore(col, taskId, { points: newValue ? Number(newValue) : 1 } as Partial<DevKanbanTask>);
-            } else if (field === 'Due Date') {
-              onUpdateCore(col, taskId, { due: newValue || undefined } as Partial<DevKanbanTask>);
+            const parentTaskId = findSubtaskParent(taskId, col);
+            if (parentTaskId && onUpdateSubtask) {
+              // This is a subtask
+              if (field === 'Title') {
+                onUpdateSubtask(col, parentTaskId, taskId, { title: newValue } as Partial<DevKanbanTask>);
+              } else if (field === 'Points') {
+                onUpdateSubtask(col, parentTaskId, taskId, { points: newValue ? Number(newValue) : 1 } as Partial<DevKanbanTask>);
+              } else if (field === 'Due Date') {
+                onUpdateSubtask(col, parentTaskId, taskId, { custom: { dueDate: newValue || undefined } } as Partial<DevKanbanTask>);
+              } else {
+                // Custom fields
+                onUpdateSubtask(col, parentTaskId, taskId, { custom: { [field]: newValue } } as Partial<DevKanbanTask>);
+              }
             } else {
-              // Custom fields
-              onUpdateField(col, taskId, field, newValue);
+              // This is a main task
+              if (field === 'Title') {
+                onUpdateCore(col, taskId, { title: newValue } as Partial<DevKanbanTask>);
+              } else if (field === 'Points') {
+                onUpdateCore(col, taskId, { points: newValue ? Number(newValue) : 1 } as Partial<DevKanbanTask>);
+              } else if (field === 'Due Date') {
+                onUpdateCore(col, taskId, { due: newValue || undefined } as Partial<DevKanbanTask>);
+              } else {
+                // Custom fields
+                onUpdateField(col, taskId, field, newValue);
+              }
             }
             setEditingCell(null);
           }}
@@ -1036,33 +1881,138 @@ const BoardTableView: React.FC<{
                 <tbody>
                   {tasks.map(t => {
                     const isDragging = draggedTask?.id === t.id;
+                    const devTask = t as DevKanbanTask;
+                    const subtasks = devTask.subtasks || [];
+                    const isExpanded = expandedTasks.has(t.id);
+                    const hasSubtasks = subtasks.length > 0;
+                    
                     return (
-                      <tr 
-                        key={t.id} 
-                        className={`hover:bg-white/5 cursor-move transition-all ${isDragging ? 'opacity-50 bg-cyan-500/10' : ''}`}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, t, col)}
-                        onDragEnd={() => {setDraggedTask(null); setDragOverCol(null);}}
-                      >
-                        <td className="px-4 py-2 text-slate-100 truncate max-w-[320px]" title={t.title}>
-                          {renderEditableCell(t.title, t.id, 'Title', col)}
-                        </td>
-                        <td className="px-4 py-2 text-slate-300">
-                          {renderEditableCell((t as any).type || 'Task', t.id, 'Type', col, ['Task', 'Bug', 'Feature', 'Epic', 'Story'])}
-                        </td>
-                        <td className="px-4 py-2"><Assignees ids={t.assignees} /></td>
-                        <td className="px-4 py-2 text-slate-300">
-                          {renderEditableCell(t.points, t.id, 'Points', col)}
-                        </td>
-                        {[...customColumns, ...allCustomFields].map(customCol => (
-                          <td key={customCol} className="px-4 py-2 text-slate-300">
-                            {customCol === 'Status' && renderEditableCell((t as any).status || col, t.id, 'Status', col, ['Todo', 'In Progress', 'Review', 'Done'])}
-                            {customCol === 'Priority' && renderEditableCell((t as any).priority || 'Medium', t.id, 'Priority', col, ['Low', 'Medium', 'High', 'Critical'])}
-                            {customCol === 'Due Date' && renderEditableCell((t as any).dueDate, t.id, 'Due Date', col)}
-                            {!['Status', 'Priority', 'Due Date'].includes(customCol) && renderEditableCell((t as any).custom?.[customCol], t.id, customCol, col)}
+                      <React.Fragment key={t.id}>
+                        {/* Main Task Row */}
+                        <tr 
+                          className={`hover:bg-white/5 cursor-move transition-all ${isDragging ? 'opacity-50 bg-cyan-500/10' : ''}`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, t, col)}
+                          onDragEnd={() => {setDraggedTask(null); setDragOverCol(null);}}
+                        >
+                          <td className="px-4 py-2 text-slate-100 truncate max-w-[320px]" title={t.title}>
+                            <div className="flex items-center gap-2">
+                              {hasSubtasks ? (
+                                <button
+                                  onClick={() => toggleTaskExpansion(t.id)}
+                                  className="text-slate-400 hover:text-slate-200 transition-colors"
+                                >
+                                  {isExpanded ? '▼' : '▶'}
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => toggleTaskExpansion(t.id)}
+                                  className="text-slate-500 hover:text-cyan-400 transition-colors flex items-center justify-center w-4 h-4"
+                                  title="Add subtask"
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </button>
+                              )}
+                              {renderEditableCell(t.title, t.id, 'Title', col)}
+                              {hasSubtasks && (
+                                <span className="text-[10px] text-slate-500 bg-slate-700 px-1.5 py-0.5 rounded">
+                                  {subtasks.filter(st => st.custom?.status === 'done').length}/{subtasks.length}
+                                </span>
+                              )}
+                            </div>
                           </td>
+                          <td className="px-4 py-2 text-slate-300">
+                            {renderEditableCell((t as any).type || 'Task', t.id, 'Type', col, ['Task', 'Bug', 'Feature', 'Epic', 'Story'])}
+                          </td>
+                          <td className="px-4 py-2"><Assignees ids={t.assignees} /></td>
+                          <td className="px-4 py-2 text-slate-300">
+                            {renderEditableCell(t.points, t.id, 'Points', col)}
+                          </td>
+                          {[...customColumns, ...allCustomFields].map(customCol => (
+                            <td key={customCol} className="px-4 py-2 text-slate-300">
+                              {customCol === 'Status' && renderEditableCell((t as any).status || col, t.id, 'Status', col, ['Todo', 'In Progress', 'Review', 'Done'])}
+                              {customCol === 'Priority' && renderEditableCell((t as any).priority || 'Medium', t.id, 'Priority', col, ['Low', 'Medium', 'High', 'Critical'])}
+                              {customCol === 'Due Date' && renderEditableCell((t as any).dueDate, t.id, 'Due Date', col)}
+                              {!['Status', 'Priority', 'Due Date'].includes(customCol) && renderEditableCell((t as any).custom?.[customCol], t.id, customCol, col)}
+                            </td>
+                          ))}
+                        </tr>
+                        
+                        {/* Subtask Rows */}
+                        {isExpanded && subtasks.map(subtask => (
+                          <tr key={subtask.id} className="bg-slate-800/30 hover:bg-slate-700/30 transition-colors">
+                            <td className="px-4 py-2 text-slate-300">
+                              <div className="flex items-center gap-2 ml-6">
+                                <button
+                                  onClick={() => toggleSubtaskStatus(col, t.id, subtask.id, subtask.custom?.status || 'todo')}
+                                  className={`w-3 h-3 rounded border transition-colors ${
+                                    subtask.custom?.status === 'done' 
+                                      ? 'bg-emerald-500 border-emerald-500' 
+                                      : 'border-slate-400 hover:border-slate-300'
+                                  }`}
+                                >
+                                  {subtask.custom?.status === 'done' && (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                                    </div>
+                                  )}
+                                </button>
+                                <div className={`flex-1 ${subtask.custom?.status === 'done' ? 'opacity-60' : ''}`}>
+                                  {renderEditableCell(subtask.title, subtask.id, 'Title', col)}
+                                </div>
+                                <button
+                                  onClick={() => onDeleteSubtask && onDeleteSubtask(col, t.id, subtask.id)}
+                                  className="text-slate-500 hover:text-red-400 transition-colors"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            </td>
+                            <td className="px-4 py-2 text-slate-500">
+                              {renderEditableCell(subtask.type || 'Subtask', subtask.id, 'Type', col, ['Subtask', 'Task', 'Bug'])}
+                            </td>
+                            <td className="px-4 py-2">
+                              <Assignees ids={subtask.assignees || []} />
+                            </td>
+                            <td className="px-4 py-2 text-slate-300">
+                              {renderEditableCell(subtask.points || 1, subtask.id, 'Points', col)}
+                            </td>
+                            {[...customColumns, ...allCustomFields].map(customCol => (
+                              <td key={customCol} className="px-4 py-2 text-slate-500 text-xs">
+                                {customCol === 'Status' && renderEditableCell(subtask.custom?.status || 'todo', subtask.id, 'Status', col, ['todo', 'in-progress', 'review', 'done'])}
+                                {customCol === 'Priority' && renderEditableCell(subtask.priority || 'Medium', subtask.id, 'Priority', col, ['Low', 'Medium', 'High', 'Critical'])}
+                                {customCol === 'Due Date' && renderEditableCell((subtask as any).dueDate, subtask.id, 'Due Date', col)}
+                                {!['Status', 'Priority', 'Due Date'].includes(customCol) && renderEditableCell(subtask.custom?.[customCol], subtask.id, customCol, col)}
+                              </td>
+                            ))}
+                          </tr>
                         ))}
-                      </tr>
+                        
+                        {/* Add Subtask Row */}
+                        {isExpanded && (
+                          <tr className="bg-slate-800/20">
+                            <td colSpan={allColumns.length} className="px-4 py-2">
+                              <div className="flex items-center gap-2 ml-6">
+                                <input
+                                  type="text"
+                                  value={newSubtaskTitle[t.id] || ''}
+                                  onChange={(e) => setNewSubtaskTitle(prev => ({ ...prev, [t.id]: e.target.value }))}
+                                  placeholder="Add a subtask..."
+                                  className="flex-1 bg-white/10 border border-white/20 rounded px-2 py-1 text-xs text-slate-100 outline-none focus:border-cyan-400/40"
+                                  onKeyPress={(e) => e.key === 'Enter' && addSubtaskToTask(col, t.id)}
+                                />
+                                <button
+                                  onClick={() => addSubtaskToTask(col, t.id)}
+                                  disabled={!newSubtaskTitle[t.id]?.trim()}
+                                  className="px-2 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 rounded text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Add
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     );
                   })}
                   {tasks.length===0 && (
@@ -1292,18 +2242,110 @@ const TaskEditorModal: React.FC<{ open:boolean; mode:'new'|'edit'; column:string
   const [assignees,setAssignees]=React.useState<string[]>([]);
   const [sprint,setSprint]=React.useState('');
   const [due,setDue]=React.useState('');
-  React.useEffect(()=>{ if(open){ setTitle(task?.title||''); setType(task?.type||'Task'); setPriority(task?.priority||'Medium'); setPoints(String(task?.points??1)); setLabels((task?.labels?.length? task.labels: task?.tags||[]).join(', ')); setAssignees(task?.assignees||[]); setSprint(task?.sprint||''); setDue(task?.due||''); } },[open,task]);
+  const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('');
+  const [subtasks, setSubtasks] = React.useState<DevKanbanTask[]>([]);
+  const [comments, setComments] = React.useState<TaskComment[]>([]);
+  
+  React.useEffect(()=>{ 
+    if(open){ 
+      setTitle(task?.title||''); 
+      setType(task?.type||'Task'); 
+      setPriority(task?.priority||'Medium'); 
+      setPoints(String(task?.points??1)); 
+      setLabels((task?.labels?.length? task.labels: task?.tags||[]).join(', ')); 
+      setAssignees(task?.assignees||[]); 
+      setSprint(task?.sprint||''); 
+      setDue(task?.due||''); 
+      setSubtasks(task?.subtasks || []);
+      setNewSubtaskTitle('');
+      setComments(task?.comments || []);
+    } 
+  },[open,task]);
   if(!open) return null;
   const toggle=(id:string)=> setAssignees(a=> a.includes(id)? a.filter(x=>x!==id): [...a,id]);
-  const save=()=>{ const pts=points.trim()===''? undefined:Number(points); const arr=labels.split(',').map(s=>s.trim()).filter(Boolean); onSave({ title:title.trim()||'Untitled', points:pts, assignees, tags: !isDev? arr: undefined, labels: isDev? arr: undefined, type:isDev? type: undefined, priority:isDev? priority: undefined, sprint:isDev? (sprint||undefined): undefined, due:isDev? (due||undefined): undefined }); };
+  
+  const handleAddComment = (content: string) => {
+    const newComment: TaskComment = {
+      id: `comment_${Date.now()}_${Math.random()}`,
+      author: 'u1', // Current user - you can replace with actual user context
+      content,
+      createdAt: Date.now()
+    };
+    setComments([...comments, newComment]);
+  };
+
+  const handleEditComment = (commentId: string, content: string) => {
+    setComments(comments.map(c => 
+      c.id === commentId 
+        ? { ...c, content, updatedAt: Date.now(), isEdited: true }
+        : c
+    ));
+  };
+
+  const handleDeleteComment = (commentId: string) => {
+    setComments(comments.filter(c => c.id !== commentId));
+  };
+  
+  const addSubtask = () => {
+    if (newSubtaskTitle.trim()) {
+      const newSubtask: DevKanbanTask = {
+        id: `subtask_${Date.now()}_${Math.random()}`,
+        title: newSubtaskTitle.trim(),
+        isSubtask: true,
+        parentTaskId: task?.id,
+        createdAt: Date.now(),
+        assignees: [],
+        tags: [],
+        points: 1,
+        custom: { status: 'todo' }
+      };
+      setSubtasks([...subtasks, newSubtask]);
+      setNewSubtaskTitle('');
+    }
+  };
+  
+  const toggleSubtask = (subtaskId: string) => {
+    setSubtasks(subtasks.map(st => 
+      st.id === subtaskId ? { 
+        ...st, 
+        custom: { 
+          ...st.custom, 
+          status: st.custom?.status === 'done' ? 'todo' : 'done' 
+        } 
+      } : st
+    ));
+  };
+  
+  const deleteSubtask = (subtaskId: string) => {
+    setSubtasks(subtasks.filter(st => st.id !== subtaskId));
+  };
+  
+  const save=()=>{ 
+    const pts=points.trim()===''? undefined:Number(points); 
+    const arr=labels.split(',').map(s=>s.trim()).filter(Boolean); 
+    onSave({ 
+      title:title.trim()||'Untitled', 
+      points:pts, 
+      assignees, 
+      tags: !isDev? arr: undefined, 
+      labels: isDev? arr: undefined, 
+      type:isDev? type: undefined, 
+      priority:isDev? priority: undefined, 
+      sprint:isDev? (sprint||undefined): undefined, 
+      due:isDev? (due||undefined): undefined,
+      subtasks: subtasks.length > 0 ? subtasks : undefined,
+      comments: comments.length > 0 ? comments : undefined
+    }); 
+  };
   return createPortal(
-    <div className="fixed inset-0 z-[1200] flex items-center justify-center">
+    <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}/>
-      <GlassCard className="relative z-10 w-[520px] max-w-[92vw] p-5">
-        <div className="mb-4 flex items-center justify-between">
+      <GlassCard className="relative z-10 w-[520px] max-w-[92vw] max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="p-5 pb-0 flex items-center justify-between shrink-0">
           <h3 className="text-sm font-semibold text-slate-100">{mode==='new'? 'New Task':'Edit Task'} • {column}</h3>
           <button onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-white/10"><X className="h-4 w-4"/></button>
         </div>
+        <div className="p-5 overflow-y-auto flex-1">
         <div className="grid grid-cols-2 gap-4 text-xs">
           <div className="col-span-2">
             <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-400">Title</label>
@@ -1352,7 +2394,67 @@ const TaskEditorModal: React.FC<{ open:boolean; mode:'new'|'edit'; column:string
             </div>
           </div>
         </div>
-        <div className="mt-5 flex justify-end gap-2">
+        
+        {/* Subtask Management Section - Only show for edit mode */}
+        {mode === 'edit' && task && !task.isSubtask && (
+          <div className="mt-4 border-t border-white/10 pt-4">
+            <label className="mb-3 block text-[10px] uppercase tracking-wide text-slate-400">Subtasks</label>
+            
+            {/* Existing Subtasks */}
+            {subtasks.length > 0 && (
+              <div className="mb-3 space-y-2">
+                {subtasks.map((subtask) => (
+                  <div key={subtask.id} className="flex items-center gap-2 rounded-md bg-white/5 p-2">
+                    <input
+                      type="checkbox"
+                      checked={subtask.custom?.status === 'done'}
+                      onChange={() => toggleSubtask(subtask.id)}
+                      className="h-3 w-3 rounded border-white/20 bg-white/10 text-cyan-500 focus:ring-cyan-500/50"
+                    />
+                    <span className={`flex-1 text-xs ${subtask.custom?.status === 'done' ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
+                      {subtask.title}
+                    </span>
+                    <button
+                      onClick={() => deleteSubtask(subtask.id)}
+                      className="rounded p-1 text-slate-400 hover:bg-white/10 hover:text-red-300"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Add New Subtask */}
+            <div className="flex gap-2">
+              <input
+                value={newSubtaskTitle}
+                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                placeholder="Add a subtask..."
+                className="flex-1 rounded-md border border-white/10 bg-white/5 px-2 py-2 text-xs text-slate-100 outline-none focus:border-cyan-400/40"
+                onKeyPress={(e) => e.key === 'Enter' && addSubtask()}
+              />
+              <SoftButton
+                onClick={addSubtask}
+                className="text-xs bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200"
+                disabled={!newSubtaskTitle.trim()}
+              >
+                Add
+              </SoftButton>
+            </div>
+          </div>
+        )}
+        
+        {/* Comments Section */}
+        <CommentsSection
+          comments={comments}
+          onAddComment={handleAddComment}
+          onEditComment={handleEditComment}
+          onDeleteComment={handleDeleteComment}
+        />
+        </div>
+        
+        <div className="p-5 pt-0 shrink-0 flex justify-end gap-2">
           <SoftButton onClick={onClose} className="text-xs">Cancel</SoftButton>
           <SoftButton onClick={()=>{ save(); onClose(); }} className="text-xs bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200">{mode==='new'? 'Create':'Save'}</SoftButton>
         </div>
@@ -1871,15 +2973,332 @@ const TimelineView: React.FC<{ data: KanbanBoardData; onAddTask:(col:string)=>vo
 };
 
 // ============================================================================
+// PROJECT HOME SCREEN
+// ============================================================================
+const ProjectHomeScreen: React.FC<{ projectName: string; boards: Board[]; onSelectBoard: (id: string) => void; }> = ({ projectName, boards, onSelectBoard }) => {
+  const projectInfo = {
+    description: "Modern web application with advanced user authentication, payment processing, and mobile-responsive design. Built with React, TypeScript, and modern development practices.",
+    createdDate: "January 15, 2025",
+    lastUpdate: "2 hours ago",
+    owner: "Sam Chen",
+    status: "Active Development",
+    priority: "High",
+    estimatedCompletion: "December 2025"
+  };
+
+  // Teams working on THIS specific project
+  const projectTeams = [
+    {
+      id: "team-frontend",
+      name: "Frontend Team",
+      lead: "Ava Martinez",
+      members: 4,
+      focus: "React, TypeScript, UI/UX",
+      status: "active",
+      currentSprint: "Sprint 23",
+      members_list: [
+        { name: "Ava Martinez", role: "Team Lead", avatar: "bg-amber-500", status: "online" },
+        { name: "Maya Patel", role: "Senior Developer", avatar: "bg-blue-500", status: "online" },
+        { name: "Jake Wilson", role: "Frontend Developer", avatar: "bg-green-500", status: "away" },
+        { name: "Luna Chen", role: "UI Developer", avatar: "bg-purple-500", status: "online" }
+      ]
+    },
+    {
+      id: "team-backend", 
+      name: "Backend Team",
+      lead: "Leo Kim",
+      members: 3,
+      focus: "Node.js, APIs, Database",
+      status: "active",
+      currentSprint: "Sprint 23",
+      members_list: [
+        { name: "Leo Kim", role: "Team Lead", avatar: "bg-emerald-500", status: "online" },
+        { name: "Alex Rodriguez", role: "Senior Developer", avatar: "bg-cyan-500", status: "online" },
+        { name: "Jordan Taylor", role: "Backend Developer", avatar: "bg-indigo-500", status: "offline" }
+      ]
+    },
+    {
+      id: "team-design",
+      name: "Design Team", 
+      lead: "Mia Rodriguez",
+      members: 3,
+      focus: "UX/UI, Prototyping",
+      status: "active",
+      currentSprint: "Sprint 23",
+      members_list: [
+        { name: "Mia Rodriguez", role: "Lead Designer", avatar: "bg-rose-500", status: "online" },
+        { name: "Kai Thompson", role: "UX Designer", avatar: "bg-pink-500", status: "away" },
+        { name: "Zoe Martinez", role: "UI Designer", avatar: "bg-violet-500", status: "online" }
+      ]
+    },
+    {
+      id: "team-qa",
+      name: "QA Team",
+      lead: "Riley Wang", 
+      members: 2,
+      focus: "Testing, Quality Assurance",
+      status: "active",
+      currentSprint: "Sprint 23",
+      members_list: [
+        { name: "Riley Wang", role: "QA Lead", avatar: "bg-teal-500", status: "online" },
+        { name: "Sam Johnson", role: "QA Engineer", avatar: "bg-orange-500", status: "online" }
+      ]
+    }
+  ];
+
+  const totalTeamMembers = projectTeams.reduce((sum, team) => sum + team.members, 0);
+
+  const projectStats = {
+    totalTasks: 127,
+    completedTasks: 89,
+    activeSprints: 2,
+    teamMembers: totalTeamMembers  // Total across all teams working on this project
+  };
+
+  const upcomingMilestones = [
+    { id: 1, title: "Beta Release", date: "September 15, 2025", status: "on-track", progress: 78, description: "Core features complete for initial user testing" },
+    { id: 2, title: "Mobile App Launch", date: "October 1, 2025", status: "at-risk", progress: 34, description: "Native mobile application for iOS and Android" },
+    { id: 3, title: "API v2.0 Release", date: "October 20, 2025", status: "planning", progress: 12, description: "Enhanced API with improved performance and new endpoints" },
+    { id: 4, title: "Production Launch", date: "December 1, 2025", status: "planning", progress: 5, description: "Full production deployment with monitoring" }
+  ];
+
+  const recentUpdates = [
+    { id: 1, title: "Frontend Team completed user authentication module", date: "2 days ago", author: "Ava Martinez", type: "milestone" },
+    { id: 2, title: "Backend Team finished payment integration testing", date: "3 days ago", author: "Leo Kim", type: "progress" },
+    { id: 3, title: "Design Team approved mobile UI mockups", date: "5 days ago", author: "Mia Rodriguez", type: "review" },
+    { id: 4, title: "All teams completed Sprint 23 retrospective", date: "1 week ago", author: "Project Teams", type: "planning" },
+    { id: 5, title: "QA Team identified and fixed security vulnerability", date: "1 week ago", author: "Riley Wang", type: "security" }
+  ];
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'online': return 'bg-emerald-500';
+      case 'away': return 'bg-amber-500';
+      case 'offline': return 'bg-slate-500';
+      default: return 'bg-slate-500';
+    }
+  };
+
+  const getUpdateIcon = (type: string) => {
+    switch (type) {
+      case 'milestone': return <div className="w-2 h-2 rounded-full bg-emerald-500" />;
+      case 'progress': return <div className="w-2 h-2 rounded-full bg-cyan-500" />;
+      case 'review': return <div className="w-2 h-2 rounded-full bg-purple-500" />;
+      case 'planning': return <div className="w-2 h-2 rounded-full bg-amber-500" />;
+      case 'security': return <div className="w-2 h-2 rounded-full bg-red-500" />;
+      default: return <div className="w-2 h-2 rounded-full bg-slate-500" />;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Project Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-100">{projectName}</h1>
+          <p className="text-slate-400 mt-2 text-lg max-w-3xl">{projectInfo.description}</p>
+          <div className="flex items-center gap-6 mt-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-500">Owner:</span>
+              <span className="text-sm text-slate-300 font-medium">{projectInfo.owner}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-500">Created:</span>
+              <span className="text-sm text-slate-300">{projectInfo.createdDate}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-500">Last updated:</span>
+              <span className="text-sm text-slate-300">{projectInfo.lastUpdate}</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <Pill tone="green" className="text-sm">Active</Pill>
+          <Pill tone="amber" className="text-sm">High Priority</Pill>
+        </div>
+      </div>
+
+      {/* Project Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <GlassCard className="p-6">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-slate-100 mb-2">{projectStats.totalTasks}</div>
+            <div className="text-sm text-slate-400">Total Tasks</div>
+            <div className="text-xs text-slate-500 mt-1">Across all boards</div>
+          </div>
+        </GlassCard>
+        <GlassCard className="p-6">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-emerald-400 mb-2">{Math.round((projectStats.completedTasks / projectStats.totalTasks) * 100)}%</div>
+            <div className="text-sm text-slate-400">Completed</div>
+            <div className="text-xs text-slate-500 mt-1">{projectStats.completedTasks} of {projectStats.totalTasks} tasks</div>
+          </div>
+        </GlassCard>
+        <GlassCard className="p-6">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-cyan-400 mb-2">{projectStats.activeSprints}</div>
+            <div className="text-sm text-slate-400">Active Sprints</div>
+            <div className="text-xs text-slate-500 mt-1">Currently running</div>
+          </div>
+        </GlassCard>
+        <GlassCard className="p-6">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-purple-400 mb-2">{projectStats.teamMembers}</div>
+            <div className="text-sm text-slate-400">Team Members</div>
+            <div className="text-xs text-slate-500 mt-1">Active contributors</div>
+          </div>
+        </GlassCard>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Project Teams */}
+        <GlassCard className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-100">Project Teams</h2>
+            <div className="text-xs text-slate-400">{projectTeams.length} teams • {totalTeamMembers} members</div>
+          </div>
+          <div className="space-y-4">
+            {projectTeams.map(team => (
+              <div key={team.id} className="p-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-sm font-semibold text-slate-200">{team.name}</h3>
+                      <div className="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                        {team.status}
+                      </div>
+                    </div>
+                    <div className="text-xs text-slate-400 mb-1">Lead: {team.lead}</div>
+                    <div className="text-xs text-slate-500">{team.focus}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-slate-300">{team.members}</div>
+                    <div className="text-xs text-slate-500">members</div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-slate-500">Current: {team.currentSprint}</div>
+                  <div className="flex -space-x-1">
+                    {team.members_list.slice(0, 3).map((member, idx) => (
+                      <div key={idx} className={`w-6 h-6 rounded-full ${member.avatar} flex items-center justify-center text-white text-xs font-medium border border-white/20`}>
+                        {member.name.split(' ').map(n => n[0]).join('')}
+                      </div>
+                    ))}
+                    {team.members > 3 && (
+                      <div className="w-6 h-6 rounded-full bg-slate-600 flex items-center justify-center text-white text-xs font-medium border border-white/20">
+                        +{team.members - 3}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+
+        {/* Project Boards */}
+        <GlassCard className="p-6">
+          <h2 className="text-lg font-semibold text-slate-100 mb-4">Project Boards</h2>
+          <div className="space-y-3">
+            {boards.map(board => (
+              <div
+                key={board.id}
+                onClick={() => onSelectBoard(board.id)}
+                className="p-4 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-slate-100">{board.name}</h3>
+                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                </div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-slate-400">Progress</span>
+                  <span className="text-emerald-400">{board.name === 'Development' ? '73%' : '89%'}</span>
+                </div>
+                <div className="w-full bg-white/10 rounded-full h-1.5">
+                  <div 
+                    className="bg-emerald-500 h-1.5 rounded-full" 
+                    style={{width: board.name === 'Development' ? '73%' : '89%'}}
+                  />
+                </div>
+                <div className="text-xs text-slate-500 mt-2">
+                  {board.name === 'Development' ? '47 tasks' : '23 tasks'} • Last activity {board.name === 'Development' ? '2h ago' : '1d ago'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+
+        {/* Project Milestones */}
+        <GlassCard className="p-6">
+          <h2 className="text-lg font-semibold text-slate-100 mb-4">Project Milestones</h2>
+          <div className="space-y-4">
+            {upcomingMilestones.map(milestone => (
+              <div key={milestone.id} className="space-y-2">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium text-slate-200">{milestone.title}</h3>
+                    <p className="text-xs text-slate-400 mt-1">{milestone.description}</p>
+                  </div>
+                  <Pill tone={milestone.status === 'on-track' ? 'green' : milestone.status === 'at-risk' ? 'amber' : 'neutral'} className="text-xs ml-2">
+                    {milestone.status.replace('-', ' ')}
+                  </Pill>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-500">{milestone.date}</span>
+                  <span className="text-slate-400">{milestone.progress}% complete</span>
+                </div>
+                <div className="w-full bg-white/10 rounded-full h-1.5">
+                  <div 
+                    className={`h-1.5 rounded-full ${
+                      milestone.status === 'on-track' ? 'bg-emerald-500' : 
+                      milestone.status === 'at-risk' ? 'bg-amber-500' : 
+                      'bg-slate-500'
+                    }`}
+                    style={{width: `${milestone.progress}%`}}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+
+      </div>
+
+      {/* Recent Project Updates */}
+      <GlassCard className="p-6">
+        <h2 className="text-lg font-semibold text-slate-100 mb-4">Recent Project Updates</h2>
+        <div className="space-y-3">
+          {recentUpdates.map(update => (
+            <div key={update.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors">
+              <div className="mt-2">
+                {getUpdateIcon(update.type)}
+              </div>
+              <div className="flex-1">
+                <div className="text-sm text-slate-200 font-medium">{update.title}</div>
+                <div className="text-xs text-slate-500 mt-1">
+                  {update.author} • {update.date}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </GlassCard>
+    </div>
+  );
+};
+
+// ============================================================================
 // DASHBOARD SCREEN
 // ============================================================================
 const DashboardScreen: React.FC<{ projectName: string; }> = ({ projectName }) => {
   const kpis = [
-    { id: "kpi_sprint_progress", title: "Sprint Progress", value: "73%", trend: "+5%", color: "emerald" },
-    { id: "kpi_velocity_avg3", title: "Velocity", value: "42", trend: "+8%", color: "cyan" },
-    { id: "kpi_lead_time_p50", title: "Lead Time", value: "3.2d", trend: "-12%", color: "purple" },
-    { id: "kpi_open_p0p1_bugs", title: "Critical Bugs", value: "2", trend: "-1", color: "red" },
-    { id: "kpi_deploys_7d", title: "Deploys (7d)", value: "14", trend: "+3", color: "amber" },
+    { id: "kpi_total_projects", title: "Active Projects", value: "12", trend: "+2", color: "blue" },
+    { id: "kpi_overall_progress", title: "Overall Progress", value: "68%", trend: "+5%", color: "emerald" },
+    { id: "kpi_avg_velocity", title: "Avg Velocity", value: "42", trend: "+8%", color: "cyan" },
+    { id: "kpi_avg_lead_time", title: "Avg Lead Time", value: "3.2d", trend: "-12%", color: "purple" },
+    { id: "kpi_critical_issues", title: "Critical Issues", value: "7", trend: "-3", color: "red" },
+    { id: "kpi_weekly_deploys", title: "Weekly Deploys", value: "28", trend: "+5", color: "amber" },
   ];
 
   // Sample chart data for more realistic widgets
@@ -1937,11 +3356,15 @@ const DashboardScreen: React.FC<{ projectName: string; }> = ({ projectName }) =>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-100">{projectName} Dashboard</h1>
-          <p className="text-sm text-slate-400 mt-1">Software development metrics and insights</p>
+          <h1 className="text-2xl font-bold text-slate-100">Analytics Dashboard</h1>
+          <p className="text-sm text-slate-400 mt-1">Real-time metrics and performance insights across all projects</p>
         </div>
         <div className="flex items-center gap-2">
           <Pill tone="blue" className="text-xs">Last 30 days</Pill>
+          <SoftButton className="text-xs">
+            <RefreshCw className="h-3 w-3 mr-1" />
+            Refresh Data
+          </SoftButton>
           <SoftButton className="text-xs">
             <MoreHorizontal className="h-3 w-3 mr-1" />
             Configure
@@ -1975,100 +3398,100 @@ const DashboardScreen: React.FC<{ projectName: string; }> = ({ projectName }) =>
       {/* Main Dashboard Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         
-        {/* Sprint Burndown - Compact */}
+        {/* Project Portfolio Progress */}
         <GlassCard className="p-4 lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-slate-100">Sprint Burndown</h3>
+            <h3 className="text-sm font-semibold text-slate-100">Portfolio Progress</h3>
             <Pill tone="green" className="text-xs">On Track</Pill>
           </div>
           <div className="mb-2">
-            <div className="text-lg font-bold text-slate-100">73% Complete</div>
-            <div className="text-xs text-slate-400">4 days remaining</div>
+            <div className="text-lg font-bold text-slate-100">68% Complete</div>
+            <div className="text-xs text-slate-400">Across 12 active projects</div>
           </div>
           <MiniChart data={sprintData} type="line" color="emerald" height="h-12" />
         </GlassCard>
 
-        {/* Velocity */}
+        {/* Average Velocity */}
         <GlassCard className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-slate-100">Velocity</h3>
+            <h3 className="text-sm font-semibold text-slate-100">Avg Velocity</h3>
             <div className="text-xs text-cyan-400">+8%</div>
           </div>
           <div className="mb-2">
             <div className="text-lg font-bold text-slate-100">42 pts</div>
-            <div className="text-xs text-slate-400">avg last 3</div>
+            <div className="text-xs text-slate-400">across all teams</div>
           </div>
           <MiniChart data={velocityData} type="bar" color="cyan" height="h-10" />
         </GlassCard>
 
-        {/* Test Coverage */}
+        {/* Overall Quality Score */}
         <GlassCard className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-slate-100">Test Coverage</h3>
-            <div className="text-xs text-emerald-400">+2%</div>
+            <h3 className="text-sm font-semibold text-slate-100">Quality Score</h3>
+            <div className="text-xs text-emerald-400">+5%</div>
           </div>
           <div className="mb-2">
             <div className="text-lg font-bold text-slate-100">87%</div>
-            <div className="text-xs text-slate-400">all suites</div>
+            <div className="text-xs text-slate-400">portfolio avg</div>
           </div>
           <div className="w-full bg-white/10 rounded-full h-2">
             <div className="bg-emerald-500 h-2 rounded-full" style={{width: '87%'}}></div>
           </div>
         </GlassCard>
 
-        {/* PR Review Time */}
+        {/* Average Lead Time */}
         <GlassCard className="p-4 lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-slate-100">PR Review Time</h3>
-            <div className="text-xs text-purple-400">Median</div>
+            <h3 className="text-sm font-semibold text-slate-100">Lead Time Trends</h3>
+            <div className="text-xs text-purple-400">Portfolio Avg</div>
           </div>
           <div className="mb-2">
-            <div className="text-lg font-bold text-slate-100">1.9h</div>
-            <div className="text-xs text-slate-400">down from 2.4h</div>
+            <div className="text-lg font-bold text-slate-100">3.2d</div>
+            <div className="text-xs text-slate-400">down from 3.6d</div>
           </div>
           <MiniChart data={prReviewTimes} type="line" color="purple" height="h-12" />
         </GlassCard>
 
-        {/* Active PRs */}
+        {/* Team Utilization */}
         <GlassCard className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-slate-100">Active PRs</h3>
-            <div className="text-xs text-amber-400">2 aging</div>
+            <h3 className="text-sm font-semibold text-slate-100">Team Utilization</h3>
+            <div className="text-xs text-emerald-400">85%</div>
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-300">Ready to merge</span>
-              <span className="text-emerald-400 font-medium">4</span>
+              <span className="text-slate-300">Frontend Teams</span>
+              <span className="text-emerald-400 font-medium">88%</span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-300">In review</span>
-              <span className="text-cyan-400 font-medium">7</span>
+              <span className="text-slate-300">Backend Teams</span>
+              <span className="text-cyan-400 font-medium">82%</span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-300">Needs changes</span>
-              <span className="text-amber-400 font-medium">2</span>
+              <span className="text-slate-300">DevOps Teams</span>
+              <span className="text-amber-400 font-medium">75%</span>
             </div>
           </div>
         </GlassCard>
 
-        {/* Deploy Frequency */}
+        {/* Portfolio Health */}
         <GlassCard className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-slate-100">Deploy Freq</h3>
-            <div className="text-xs text-emerald-400">+21%</div>
+            <h3 className="text-sm font-semibold text-slate-100">Portfolio Health</h3>
+            <div className="text-xs text-emerald-400">Good</div>
           </div>
           <div className="mb-2">
-            <div className="text-lg font-bold text-slate-100">2.3/day</div>
-            <div className="text-xs text-slate-400">last 7 days</div>
+            <div className="text-lg font-bold text-slate-100">8.7/10</div>
+            <div className="text-xs text-slate-400">overall score</div>
           </div>
           <div className="flex items-center gap-1">
-            {[3, 2, 4, 1, 3, 2, 1].map((deploys, i) => (
+            {[9, 8, 9, 7, 8, 9, 8].map((score, i) => (
               <div key={i} className="flex-1 text-center">
                 <div className={`h-6 rounded-sm mb-1 ${
-                  deploys >= 3 ? 'bg-emerald-500/60' : 
-                  deploys >= 2 ? 'bg-cyan-500/60' : 
-                  'bg-slate-500/60'
-                }`} style={{height: `${deploys * 8}px`}}></div>
+                  score >= 9 ? 'bg-emerald-500/60' : 
+                  score >= 7 ? 'bg-cyan-500/60' : 
+                  'bg-amber-500/60'
+                }`} style={{height: `${score * 3}px`}}></div>
                 <div className="text-xs text-slate-500">{['M','T','W','T','F','S','S'][i]}</div>
               </div>
             ))}
@@ -2080,106 +3503,106 @@ const DashboardScreen: React.FC<{ projectName: string; }> = ({ projectName }) =>
       {/* Bottom Row - More Detailed Widgets */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         
-        {/* Blocked Items */}
+        {/* Risk Assessment */}
         <GlassCard className="p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-100">Blocked Items</h3>
-            <Pill tone="red" className="text-xs">2 critical</Pill>
+            <h3 className="text-sm font-semibold text-slate-100">Portfolio Risks</h3>
+            <Pill tone="amber" className="text-xs">3 at-risk</Pill>
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-2 rounded-lg bg-red-500/10 border border-red-400/20">
               <div>
-                <div className="text-xs font-medium text-slate-200">Payment Integration</div>
-                <div className="text-xs text-red-300">Blocked 3d • API issue</div>
+                <div className="text-xs font-medium text-slate-200">Mobile App Project</div>
+                <div className="text-xs text-red-300">Behind schedule • Resource constraints</div>
               </div>
-              <Pill tone="red" className="text-xs">P0</Pill>
+              <Pill tone="red" className="text-xs">High</Pill>
             </div>
             <div className="flex items-center justify-between p-2 rounded-lg bg-amber-500/10 border border-amber-400/20">
               <div>
-                <div className="text-xs font-medium text-slate-200">API Refactor</div>
-                <div className="text-xs text-amber-300">Waiting approval</div>
+                <div className="text-xs font-medium text-slate-200">API Migration</div>
+                <div className="text-xs text-amber-300">Technical debt increasing</div>
               </div>
-              <Pill tone="amber" className="text-xs">P1</Pill>
+              <Pill tone="amber" className="text-xs">Med</Pill>
             </div>
             <div className="text-center">
-              <button className="text-xs text-slate-400 hover:text-slate-200">View all blocked items →</button>
+              <button className="text-xs text-slate-400 hover:text-slate-200">View risk assessment →</button>
             </div>
           </div>
         </GlassCard>
 
-        {/* Epic Progress */}
+        {/* Project Status Overview */}
         <GlassCard className="p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-100">Epic Progress</h3>
-            <div className="text-xs text-slate-400">3 active</div>
+            <h3 className="text-sm font-semibold text-slate-100">Project Status</h3>
+            <div className="text-xs text-slate-400">12 projects</div>
           </div>
           <div className="space-y-3">
             <div>
               <div className="flex justify-between items-center mb-1">
-                <span className="text-xs font-medium text-slate-200">User Authentication</span>
-                <span className="text-xs text-emerald-400">85%</span>
+                <span className="text-xs font-medium text-slate-200">On Track</span>
+                <span className="text-xs text-emerald-400">8 projects</span>
               </div>
               <div className="w-full bg-white/10 rounded-full h-1.5">
-                <div className="bg-emerald-500 h-1.5 rounded-full" style={{width: '85%'}}></div>
+                <div className="bg-emerald-500 h-1.5 rounded-full" style={{width: '67%'}}></div>
               </div>
             </div>
             <div>
               <div className="flex justify-between items-center mb-1">
-                <span className="text-xs font-medium text-slate-200">Payment System</span>
-                <span className="text-xs text-cyan-400">45%</span>
+                <span className="text-xs font-medium text-slate-200">At Risk</span>
+                <span className="text-xs text-amber-400">3 projects</span>
               </div>
               <div className="w-full bg-white/10 rounded-full h-1.5">
-                <div className="bg-cyan-500 h-1.5 rounded-full" style={{width: '45%'}}></div>
+                <div className="bg-amber-500 h-1.5 rounded-full" style={{width: '25%'}}></div>
               </div>
             </div>
             <div>
               <div className="flex justify-between items-center mb-1">
-                <span className="text-xs font-medium text-slate-200">Mobile App</span>
-                <span className="text-xs text-purple-400">12%</span>
+                <span className="text-xs font-medium text-slate-200">Delayed</span>
+                <span className="text-xs text-red-400">1 project</span>
               </div>
               <div className="w-full bg-white/10 rounded-full h-1.5">
-                <div className="bg-purple-500 h-1.5 rounded-full" style={{width: '12%'}}></div>
+                <div className="bg-red-500 h-1.5 rounded-full" style={{width: '8%'}}></div>
               </div>
             </div>
             <div className="text-center pt-2">
-              <button className="text-xs text-slate-400 hover:text-slate-200">View roadmap →</button>
+              <button className="text-xs text-slate-400 hover:text-slate-200">View all projects →</button>
             </div>
           </div>
         </GlassCard>
 
-        {/* Team Activity */}
+        {/* Cross-Team Activity */}
         <GlassCard className="p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-100">Team Activity</h3>
-            <div className="text-xs text-slate-400">Today</div>
+            <h3 className="text-sm font-semibold text-slate-100">Recent Activity</h3>
+            <div className="text-xs text-slate-400">Last 24h</div>
           </div>
           <div className="space-y-3">
             <div className="flex items-start gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0"></div>
               <div>
-                <div className="text-xs text-slate-200">Bug fix deployed</div>
-                <div className="text-xs text-slate-400">2h ago • Sam</div>
+                <div className="text-xs text-slate-200">Mobile project milestone reached</div>
+                <div className="text-xs text-slate-400">2h ago • Team Alpha</div>
               </div>
             </div>
             <div className="flex items-start gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 mt-1.5 shrink-0"></div>
               <div>
-                <div className="text-xs text-slate-200">PR merged to main</div>
-                <div className="text-xs text-slate-400">4h ago • Ava</div>
+                <div className="text-xs text-slate-200">API v2.0 sprint completed</div>
+                <div className="text-xs text-slate-400">4h ago • Backend Team</div>
               </div>
             </div>
             <div className="flex items-start gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 shrink-0"></div>
               <div>
-                <div className="text-xs text-slate-200">Code review completed</div>
-                <div className="text-xs text-slate-400">6h ago • Leo</div>
+                <div className="text-xs text-slate-200">Security audit completed</div>
+                <div className="text-xs text-slate-400">6h ago • Security Team</div>
               </div>
             </div>
             <div className="flex items-start gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0"></div>
               <div>
-                <div className="text-xs text-slate-200">Sprint planning started</div>
-                <div className="text-xs text-slate-400">1d ago • Team</div>
+                <div className="text-xs text-slate-200">Weekly retrospective</div>
+                <div className="text-xs text-slate-400">1d ago • All Teams</div>
               </div>
             </div>
             <div className="text-center pt-2">
@@ -2269,7 +3692,7 @@ const GlassDashboardPage: React.FC = () => {
   const [pinnedBoardIds, setPinnedBoardIds] = React.useState<string[]>(['b1', 'b2']); // Pin Development and QA boards
   const [showCreateWs, setShowCreateWs] = React.useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
-  const [currentView, setCurrentView] = React.useState<'dashboard' | 'boards'>('boards');
+  const [currentView, setCurrentView] = React.useState<'dashboard' | 'boards' | 'project-home'>('boards');
 
   const activeWs = workspaces.find(w => w.id === activeWsId);
   const activeProject = activeWs?.projects.find(p => p.id === activeProjectId);
@@ -2373,7 +3796,8 @@ const GlassDashboardPage: React.FC = () => {
         projectName={activeProject?.name}
         boardName={currentView === 'boards' ? activeBoard.name : undefined}
         onProjectHome={() => {
-          // Navigate to project home - this could be a specific board or project dashboard
+          // Navigate to project home
+          setCurrentView('project-home');
           console.log('Navigate to project home');
         }}
         onShowAllBoards={() => {
@@ -2445,6 +3869,15 @@ const GlassDashboardPage: React.FC = () => {
           <div className="mx-auto max-w-7xl px-4 py-6">
             {currentView === 'dashboard' ? (
               <DashboardScreen projectName={activeProject?.name || 'Project'} />
+            ) : currentView === 'project-home' ? (
+              <ProjectHomeScreen 
+                projectName={activeProject?.name || 'Project'} 
+                boards={boards}
+                onSelectBoard={(boardId) => {
+                  setActiveBoardId(boardId);
+                  setCurrentView('boards');
+                }}
+              />
             ) : (
               <BoardScreen
                 board={activeBoard}
