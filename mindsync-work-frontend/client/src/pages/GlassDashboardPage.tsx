@@ -1,6 +1,6 @@
 import React from "react";
 import { createPortal } from 'react-dom';
-import { Bell, Plus, Search, ChevronDown, ChevronRight, Activity, Star, StarOff, X, Building2, FolderPlus, ChevronLeft, MoreHorizontal, Home, Layers, BarChart3, RefreshCw } from "lucide-react";
+import { Bell, Plus, Search, ChevronDown, ChevronRight, Activity, Star, StarOff, X, Building2, FolderPlus, ChevronLeft, MoreHorizontal, Home, Layers, BarChart3, RefreshCw, MessageSquare } from "lucide-react";
 
 // ============================================================================
 // TYPES
@@ -359,6 +359,15 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
   const [boardNameDraft,setBoardNameDraft]=React.useState("");
   const [menuPos,setMenuPos]=React.useState<{x:number;y:number}|null>(null);
   
+  // Subtask modal state (shared between kanban and table views)
+  const [subtaskModal, setSubtaskModal] = React.useState<{
+    open: boolean;
+    mode: 'edit';
+    column: string;
+    parentTask?: DevKanbanTask;
+    subtask?: DevKanbanTask;
+  }>({ open: false, mode: 'edit', column: '' });
+  
   React.useEffect(()=>{ setMenuBoardId(null); setEditingBoardId(null); },[board.id]);
   React.useEffect(()=>{ setKanbanBoards(prev=> prev[board.id]? prev : { ...prev, [board.id]: createInitialKanbanData() }); },[board.id]);
   
@@ -610,6 +619,27 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
     });
   };
 
+  // Subtask modal functions (shared between kanban and table views)
+  const openSubtaskModal = (col: string, parentTask: DevKanbanTask, subtask: DevKanbanTask) => {
+    setSubtaskModal({
+      open: true,
+      mode: 'edit',
+      column: col,
+      parentTask,
+      subtask
+    });
+  };
+
+  const closeSubtaskModal = () => {
+    setSubtaskModal(prev => ({ ...prev, open: false }));
+  };
+
+  const saveSubtaskModal = (patch: Partial<DevKanbanTask>) => {
+    if (subtaskModal.subtask && subtaskModal.parentTask) {
+      updateSubtask(subtaskModal.column, subtaskModal.parentTask.id, subtaskModal.subtask.id, patch);
+    }
+  };
+
   // Drag and drop functionality
   const moveTask = (taskId: string, fromCol: string, toCol: string) => {
     setKanbanBoards(prev => {
@@ -780,6 +810,7 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
               onAddSubtask={addSubtask}
               onUpdateSubtask={updateSubtask}
               onDeleteSubtask={deleteSubtask}
+              onOpenSubtaskModal={openSubtaskModal}
             /> : 
             <BoardKanban data={data} onAddTaskViaModal={openNewTaskModal} onOpenEdit={openEditTaskModal} onMoveTask={moveTask} />
           }
@@ -801,6 +832,7 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
         onAddSubtask={addSubtask}
         onUpdateSubtask={updateSubtask}
         onDeleteSubtask={deleteSubtask}
+        onOpenSubtaskModal={openSubtaskModal}
       />}
       {viewType==='calendar' && data && <CalendarView data={data} onAddTask={addTask} onEditTask={(col: string, taskId: string) => {
         const task = data.columns[col]?.find(t => t.id === taskId);
@@ -824,6 +856,23 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
         isDev={board.name==='Development'}
         onClose={closeTaskModal}
         onSave={(patch: any)=> { saveTaskModal(patch); closeTaskModal(); }}
+      />
+      
+      {/* Subtask Editor Modal */}
+      <SubtaskEditorModal
+        open={subtaskModal.open}
+        mode={subtaskModal.mode}
+        column={subtaskModal.column}
+        parentTask={subtaskModal.parentTask}
+        subtask={subtaskModal.subtask}
+        onClose={closeSubtaskModal}
+        onSave={(patch: any) => { saveSubtaskModal(patch); closeSubtaskModal(); }}
+        onDelete={() => {
+          if (subtaskModal.subtask && subtaskModal.parentTask) {
+            deleteSubtask(subtaskModal.column, subtaskModal.parentTask.id, subtaskModal.subtask.id);
+            closeSubtaskModal();
+          }
+        }}
       />
     </div>
   );
@@ -971,17 +1020,11 @@ const DevKanban: React.FC<{
   onAddSubtask?: (col: string, parentTaskId: string, subtaskTitle: string) => void;
   onUpdateSubtask?: (col: string, parentTaskId: string, subtaskId: string, patch: Partial<DevKanbanTask>) => void;
   onDeleteSubtask?: (col: string, parentTaskId: string, subtaskId: string) => void;
-}> = ({ data, onAddTaskViaModal, onOpenEdit, onMoveTask, onAddSubtask, onUpdateSubtask, onDeleteSubtask }) => {
+  onOpenSubtaskModal?: (col: string, parentTask: DevKanbanTask, subtask: DevKanbanTask) => void;
+}> = ({ data, onAddTaskViaModal, onOpenEdit, onMoveTask, onAddSubtask, onUpdateSubtask, onDeleteSubtask, onOpenSubtaskModal }) => {
   const [draggedTask, setDraggedTask] = React.useState<{id:string; col:string; isSubtask?: boolean; parentId?: string} | null>(null);
   const [dragOverCol, setDragOverCol] = React.useState<string | null>(null);
   const [isDraggingSubtask, setIsDraggingSubtask] = React.useState(false);
-  const [subtaskModal, setSubtaskModal] = React.useState<{
-    open: boolean;
-    mode: 'edit';
-    column: string;
-    parentTask?: DevKanbanTask;
-    subtask?: DevKanbanTask;
-  }>({ open: false, mode: 'edit', column: '' });
 
   const handleDragStart = (e: React.DragEvent, task: KanbanTask, col: string, isSubtask = false, parentId?: string) => {
     console.log('🎯 Drag start:', { taskId: task.id, isSubtask, parentId, col });
@@ -1047,26 +1090,6 @@ const DevKanban: React.FC<{
     }
     setDraggedTask(null);
     setDragOverCol(null);
-  };
-
-  const openSubtaskModal = (col: string, parentTask: DevKanbanTask, subtask: DevKanbanTask) => {
-    setSubtaskModal({
-      open: true,
-      mode: 'edit',
-      column: col,
-      parentTask,
-      subtask
-    });
-  };
-
-  const closeSubtaskModal = () => {
-    setSubtaskModal(prev => ({ ...prev, open: false }));
-  };
-
-  const saveSubtaskModal = (patch: Partial<DevKanbanTask>) => {
-    if (subtaskModal.subtask && subtaskModal.parentTask && onUpdateSubtask) {
-      onUpdateSubtask(subtaskModal.column, subtaskModal.parentTask.id, subtaskModal.subtask.id, patch);
-    }
   };
 
   return (
@@ -1179,7 +1202,7 @@ const DevKanban: React.FC<{
                                 });
                               } else {
                                 // Open edit modal
-                                openSubtaskModal(c, t as DevKanbanTask, subtask);
+                                onOpenSubtaskModal && onOpenSubtaskModal(c, t as DevKanbanTask, subtask);
                               }
                             }}
                           >
@@ -1232,23 +1255,6 @@ const DevKanban: React.FC<{
           </GlassCard>
         ))}
       </div>
-      
-      {/* Subtask Editor Modal */}
-      <SubtaskEditorModal
-        open={subtaskModal.open}
-        mode={subtaskModal.mode}
-        column={subtaskModal.column}
-        parentTask={subtaskModal.parentTask}
-        subtask={subtaskModal.subtask}
-        onClose={closeSubtaskModal}
-        onSave={(patch: any) => { saveSubtaskModal(patch); closeSubtaskModal(); }}
-        onDelete={() => {
-          if (subtaskModal.subtask && subtaskModal.parentTask && onDeleteSubtask) {
-            onDeleteSubtask(subtaskModal.column, subtaskModal.parentTask.id, subtaskModal.subtask.id);
-            closeSubtaskModal();
-          }
-        }}
-      />
     </div>
   );
 };
@@ -1610,7 +1616,8 @@ const BoardTableView: React.FC<{
   onAddSubtask?: (col: string, parentTaskId: string, subtaskTitle: string) => void;
   onUpdateSubtask?: (col: string, parentTaskId: string, subtaskId: string, patch: Partial<DevKanbanTask>) => void;
   onDeleteSubtask?: (col: string, parentTaskId: string, subtaskId: string) => void;
-}> = ({ data, onAddTask, onMoveTask, onUpdateField, onUpdateCore, customFieldsMap, onAddField, onAddSubtask, onUpdateSubtask, onDeleteSubtask }) => {
+  onOpenSubtaskModal?: (col: string, parentTask: DevKanbanTask, subtask: DevKanbanTask) => void;
+}> = ({ data, onAddTask, onMoveTask, onUpdateField, onUpdateCore, customFieldsMap, onAddField, onAddSubtask, onUpdateSubtask, onDeleteSubtask, onOpenSubtaskModal }) => {
   const [draggedTask, setDraggedTask] = React.useState<{id:string; col:string} | null>(null);
   const [dragOverCol, setDragOverCol] = React.useState<string | null>(null);
   const [editingCell, setEditingCell] = React.useState<{task:string; field:string; col:string}|null>(null);
@@ -1919,6 +1926,13 @@ const BoardTableView: React.FC<{
                                   {subtasks.filter(st => st.custom?.status === 'done').length}/{subtasks.length}
                                 </span>
                               )}
+                              <button
+                                onClick={() => onOpenSubtaskModal && onOpenSubtaskModal(col, t as DevKanbanTask, t as DevKanbanTask)}
+                                className="text-slate-500 hover:text-cyan-400 transition-colors flex items-center justify-center w-4 h-4"
+                                title="View comments"
+                              >
+                                <MessageSquare className="h-3 w-3" />
+                              </button>
                             </div>
                           </td>
                           <td className="px-4 py-2 text-slate-300">
@@ -1960,6 +1974,13 @@ const BoardTableView: React.FC<{
                                 <div className={`flex-1 ${subtask.custom?.status === 'done' ? 'opacity-60' : ''}`}>
                                   {renderEditableCell(subtask.title, subtask.id, 'Title', col)}
                                 </div>
+                                <button
+                                  onClick={() => onOpenSubtaskModal && onOpenSubtaskModal(col, t as DevKanbanTask, subtask as DevKanbanTask)}
+                                  className="text-slate-500 hover:text-cyan-400 transition-colors"
+                                  title="View comments"
+                                >
+                                  <MessageSquare className="h-3 w-3" />
+                                </button>
                                 <button
                                   onClick={() => onDeleteSubtask && onDeleteSubtask(col, t.id, subtask.id)}
                                   className="text-slate-500 hover:text-red-400 transition-colors"
@@ -2042,7 +2063,8 @@ const DevTableView: React.FC<{
   onUpdateField:(col:string, taskId:string, field:string, value:string)=>void; 
   onUpdateCore:(col:string, taskId:string, patch:Partial<DevKanbanTask>)=>void; 
   customFieldsMap:Record<string,string[]>; 
-}> = ({ data, onAddTask, onAddField, onUpdateField, onUpdateCore, customFieldsMap }) => {
+  onOpenSubtaskModal?: (col: string, parentTask: DevKanbanTask, subtask: DevKanbanTask) => void;
+}> = ({ data, onAddTask, onAddField, onUpdateField, onUpdateCore, customFieldsMap, onOpenSubtaskModal }) => {
   const [editingCell, setEditingCell] = React.useState<{task:string; field:string}|null>(null);
   
   const allTasks = React.useMemo(() => {
@@ -2187,7 +2209,16 @@ const DevTableView: React.FC<{
             {allTasks.map(({ task, column }) => (
               <tr key={task.id} className="border-b border-white/5 hover:bg-white/5">
                 <td className="px-3 py-2">
-                  {renderEditable(task.title, task.id, 'title', column)}
+                  <div className="flex items-center gap-2">
+                    {renderEditable(task.title, task.id, 'title', column)}
+                    <button
+                      onClick={() => onOpenSubtaskModal && onOpenSubtaskModal(column, task, task)}
+                      className="text-slate-500 hover:text-cyan-400 transition-colors flex items-center justify-center w-4 h-4"
+                      title="View comments"
+                    >
+                      <MessageSquare className="h-3 w-3" />
+                    </button>
+                  </div>
                 </td>
                 <td className="px-3 py-2">
                   <span className="px-2 py-1 rounded-full bg-white/10 text-xs text-slate-300">
