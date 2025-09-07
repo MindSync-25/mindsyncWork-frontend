@@ -1,6 +1,6 @@
 import React from "react";
 import { createPortal } from 'react-dom';
-import { Bell, Plus, Search, ChevronDown, ChevronRight, Activity, Star, StarOff, X, Building2, FolderPlus, ChevronLeft, MoreHorizontal, Home, Layers, BarChart3, RefreshCw, MessageSquare, MessageCircle, Users, Send, CheckSquare } from "lucide-react";
+import { Bell, Plus, Search, ChevronDown, ChevronUp, ChevronRight, Activity, Star, StarOff, X, Building2, FolderPlus, ChevronLeft, MoreHorizontal, Home, Layers, BarChart3, RefreshCw, MessageSquare, MessageCircle, Users, Send, CheckSquare } from "lucide-react";
 
 // ============================================================================
 // TYPES
@@ -1580,6 +1580,19 @@ const MindSyncAIPage: React.FC<{
   const [activeConversation, setActiveConversation] = React.useState<string | null>(null);
   const [showSidebar, setShowSidebar] = React.useState(true);
 
+  // Keyboard shortcut for toggling entire sidebar
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 'b') {
+        e.preventDefault();
+        setShowSidebar(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Suggested prompts for quick start
   const suggestedPrompts = [
     "Analyze my current tasks and suggest optimizations",
@@ -1680,7 +1693,7 @@ const MindSyncAIPage: React.FC<{
   return (
     <div className="flex-1 flex h-full bg-gradient-to-br from-slate-900/50 to-slate-800/50">
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col transition-all duration-300 ease-in-out relative">
         {/* Header */}
         <div className="p-4 border-b border-white/10 bg-white/5">
           <div className="flex items-center justify-between">
@@ -1697,12 +1710,6 @@ const MindSyncAIPage: React.FC<{
             </div>
             
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowSidebar(!showSidebar)}
-                className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/10"
-              >
-                <Layers className="h-4 w-4" />
-              </button>
               <button className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/10">
                 <MoreHorizontal className="h-4 w-4" />
               </button>
@@ -1815,9 +1822,33 @@ const MindSyncAIPage: React.FC<{
         </div>
       </div>
 
+      {/* Floating expand button when sidebar is collapsed */}
+      {!showSidebar && (
+        <div className="flex flex-col h-full">
+          {/* Spacer to align exactly with sidebar header buttons */}
+          <div className="h-4"></div> {/* Top padding of sidebar header */}
+          
+          <div className="flex items-center h-12"> {/* Height matches button area */}
+            {/* Subtle separator line */}
+            <div className="w-px h-12 bg-gradient-to-b from-transparent via-white/20 to-transparent"></div>
+            
+            {/* Expand button outside main area - exactly adjacent to where collapse button would be */}
+            <div className="flex items-center justify-center w-10 h-12 bg-white/5 border-l border-white/10">
+              <button
+                onClick={() => setShowSidebar(true)}
+                className="p-2 text-slate-400 hover:text-slate-200 hover:bg-white/10 transition-all duration-200 rounded-lg"
+                title="Show conversations sidebar (Ctrl+B)"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Right Sidebar - Conversation History */}
       {showSidebar && (
-        <div className="w-80 border-l border-white/10 flex flex-col bg-white/5">
+        <div className="w-80 border-l border-white/10 flex flex-col bg-white/5 transition-all duration-300 ease-in-out">
           {/* Header */}
           <div className="p-4 border-b border-white/10">
             <div className="flex items-center justify-between mb-3">
@@ -1827,13 +1858,22 @@ const MindSyncAIPage: React.FC<{
                 </div>
                 <h2 className="text-lg font-semibold text-slate-100">MindSync AI</h2>
               </div>
-              <button
-                onClick={startNewConversation}
-                className="p-2 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 transition-colors"
-                title="New Conversation"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={startNewConversation}
+                  className="p-2 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 transition-colors"
+                  title="New Conversation"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setShowSidebar(false)}
+                  className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/10 transition-colors"
+                  title="Hide sidebar - expand chat (Ctrl+B)"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
             
             <p className="text-xs text-slate-400">Your intelligent project assistant</p>
@@ -2397,7 +2437,7 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Board navigation and view selector */}
       <div className="flex flex-wrap items-center gap-4">
         <div className="relative flex items-center gap-2 overflow-x-auto max-w-full py-1 pl-1 pr-2 rounded-xl bg-white/5 border border-white/10">
@@ -2522,7 +2562,7 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
       
       {/* View Content */}
       {viewType==='kanban' && data && (
-        <GlassCard className="p-6 overflow-hidden">
+        <GlassCard className="p-6 overflow-x-auto">
           {board.name==='Development' ? 
             <DevKanban 
               data={data} 
@@ -5681,43 +5721,49 @@ const GlassDashboardPage: React.FC = () => {
               />
             </div>
           ) : sidebarView === 'chat' ? (
-            <div className="h-full pt-16"> {/* Added pt-16 to account for top nav bar */}
+            <div className="h-full pt-4">
               <ChatPage 
                 workspace={activeWs} 
                 currentUserId="1" // Replace with actual current user ID
               />
             </div>
           ) : sidebarView === 'ai' ? (
-            <div className="h-full pt-16"> {/* Added pt-16 to account for top nav bar */}
+            <div className="h-full pt-4">
               <MindSyncAIPage 
                 workspace={activeWs} 
                 currentUserId="1" // Replace with actual current user ID
               />
             </div>
           ) : (
-            <div className="mx-auto max-w-7xl px-4 py-6">
+            <div className="h-full flex flex-col">
               {currentView === 'dashboard' ? (
-                <DashboardScreen projectName={activeProject?.name || 'Project'} />
+                <div className="mx-auto max-w-7xl px-4 py-6">
+                  <DashboardScreen projectName={activeProject?.name || 'Project'} />
+                </div>
               ) : currentView === 'project-home' ? (
-                <ProjectHomeScreen 
-                  projectName={activeProject?.name || 'Project'} 
-                  boards={boards}
-                  onSelectBoard={(boardId) => {
-                    setActiveBoardId(boardId);
-                    setCurrentView('boards');
-                  }}
-                />
+                <div className="mx-auto max-w-7xl px-4 py-6">
+                  <ProjectHomeScreen 
+                    projectName={activeProject?.name || 'Project'} 
+                    boards={boards}
+                    onSelectBoard={(boardId) => {
+                      setActiveBoardId(boardId);
+                      setCurrentView('boards');
+                    }}
+                  />
+                </div>
               ) : (
-                <BoardScreen
-                  board={activeBoard}
-                  boards={boards}
-                  onSelectBoard={setActiveBoardId}
-                  onAddBoard={addBoard}
-                  pinnedIds={pinnedBoardIds}
-                  onTogglePin={togglePinBoard}
-                  onRenameBoard={renameBoard}
-                  onDeleteBoard={deleteBoard}
-                />
+                <div className="h-full mx-auto max-w-7xl px-4">
+                  <BoardScreen
+                    board={activeBoard}
+                    boards={boards}
+                    onSelectBoard={setActiveBoardId}
+                    onAddBoard={addBoard}
+                    pinnedIds={pinnedBoardIds}
+                    onTogglePin={togglePinBoard}
+                    onRenameBoard={renameBoard}
+                    onDeleteBoard={deleteBoard}
+                  />
+                </div>
               )}
             </div>
           )}
