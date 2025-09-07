@@ -1,6 +1,6 @@
 import React from "react";
 import { createPortal } from 'react-dom';
-import { Bell, Plus, Search, ChevronDown, ChevronRight, Activity, Star, StarOff, X, Building2, FolderPlus, ChevronLeft, MoreHorizontal, Home, Layers, BarChart3, RefreshCw, MessageSquare } from "lucide-react";
+import { Bell, Plus, Search, ChevronDown, ChevronRight, Activity, Star, StarOff, X, Building2, FolderPlus, ChevronLeft, MoreHorizontal, Home, Layers, BarChart3, RefreshCw, MessageSquare, MessageCircle, Users, Send, CheckSquare } from "lucide-react";
 
 // ============================================================================
 // TYPES
@@ -14,6 +14,37 @@ export interface Workspace { id: string; name: string; color: string; icon?: str
 interface KanbanTask { id: string; title: string; tags: string[]; assignees: string[]; points: number }
 interface KanbanBoardData { order: string[]; columns: Record<string, KanbanTask[]> }
 function createInitialKanbanData(): KanbanBoardData { const base = JSON.parse(JSON.stringify(kanbanSeed)) as Record<string, KanbanTask[]>; return { order: Object.keys(base), columns: base }; }
+
+// Chat Types
+interface ChatUser {
+  id: string;
+  name: string;
+  avatar?: string;
+  isOnline: boolean;
+  lastSeen?: number;
+}
+
+interface ChatMessage {
+  id: string;
+  senderId: string;
+  content: string;
+  timestamp: number;
+  type: 'text' | 'image' | 'file';
+  isEdited?: boolean;
+  replyTo?: string;
+}
+
+interface ChatGroup {
+  id: string;
+  name: string;
+  type: 'direct' | 'group';
+  members: string[]; // user IDs
+  createdBy: string;
+  createdAt: number;
+  lastMessage?: ChatMessage;
+  unreadCount?: number;
+  avatar?: string;
+}
 
 // ============================================================================
 // GLOBAL
@@ -53,6 +84,135 @@ const team = [
   { id: "u3", name: "Leo", color: "bg-emerald-500" },
   { id: "u4", name: "Mia", color: "bg-indigo-500" },
   { id: "u5", name: "Zed", color: "bg-cyan-500" },
+];
+
+// Chat demo data
+const chatUsers: ChatUser[] = [
+  { id: "u1", name: "Sam", isOnline: true },
+  { id: "u2", name: "Ava", isOnline: false, lastSeen: Date.now() - 300000 }, // 5 min ago
+  { id: "u3", name: "Leo", isOnline: true },
+  { id: "u4", name: "Mia", isOnline: false, lastSeen: Date.now() - 1800000 }, // 30 min ago
+  { id: "u5", name: "Zed", isOnline: true },
+];
+
+const sampleChatGroups: ChatGroup[] = [
+  {
+    id: "direct_u1_u3",
+    name: "Sam",
+    type: "direct",
+    members: ["u1", "u3"],
+    createdBy: "u1",
+    createdAt: Date.now() - 86400000, // 1 day ago
+    lastMessage: {
+      id: "msg_1",
+      senderId: "u1",
+      content: "Hey Leo, how's the auth implementation going?",
+      timestamp: Date.now() - 1800000, // 30 min ago
+      type: "text"
+    },
+    unreadCount: 2
+  },
+  {
+    id: "group_dev_team",
+    name: "Development Team",
+    type: "group",
+    members: ["u1", "u3", "u5"],
+    createdBy: "u1",
+    createdAt: Date.now() - 604800000, // 1 week ago
+    lastMessage: {
+      id: "msg_2",
+      senderId: "u5",
+      content: "I've pushed the latest changes to the repo",
+      timestamp: Date.now() - 3600000, // 1 hour ago
+      type: "text"
+    },
+    unreadCount: 0
+  },
+  {
+    id: "direct_u1_u2",
+    name: "Ava",
+    type: "direct",
+    members: ["u1", "u2"],
+    createdBy: "u1",
+    createdAt: Date.now() - 172800000, // 2 days ago
+    lastMessage: {
+      id: "msg_3",
+      senderId: "u2",
+      content: "Thanks for the design feedback!",
+      timestamp: Date.now() - 7200000, // 2 hours ago
+      type: "text"
+    },
+    unreadCount: 0
+  },
+  {
+    id: "group_project_alpha",
+    name: "Project Alpha",
+    type: "group",
+    members: ["u1", "u2", "u4"],
+    createdBy: "u2",
+    createdAt: Date.now() - 259200000, // 3 days ago
+    lastMessage: {
+      id: "msg_4",
+      senderId: "u4",
+      content: "Meeting rescheduled to 3 PM",
+      timestamp: Date.now() - 10800000, // 3 hours ago
+      type: "text"
+    },
+    unreadCount: 1
+  }
+];
+
+const sampleChatMessages: ChatMessage[] = [
+  // Direct messages between users
+  {
+    id: "msg_d1_1",
+    senderId: "u3",
+    content: "Hey Sam! Auth is coming along well. Just working on the JWT refresh logic.",
+    timestamp: Date.now() - 2400000, // 40 min ago
+    type: "text",
+    chatId: "direct_u1_u3"
+  },
+  {
+    id: "msg_d1_2",
+    senderId: "u1",
+    content: "Hey Leo, how's the auth implementation going?",
+    timestamp: Date.now() - 1800000, // 30 min ago
+    type: "text",
+    chatId: "direct_u1_u3"
+  },
+  {
+    id: "msg_d1_3",
+    senderId: "u3",
+    content: "Almost done! Should be ready for review by EOD.",
+    timestamp: Date.now() - 900000, // 15 min ago
+    type: "text",
+    chatId: "direct_u1_u3"
+  },
+  // Group messages
+  {
+    id: "msg_g1_1",
+    senderId: "u1",
+    content: "Morning team! How's everyone doing?",
+    timestamp: Date.now() - 7200000, // 2 hours ago
+    type: "text",
+    chatId: "group_dev_team"
+  },
+  {
+    id: "msg_g1_2",
+    senderId: "u3",
+    content: "Good morning! Working on the auth module.",
+    timestamp: Date.now() - 6900000, // 1h 55m ago
+    type: "text",
+    chatId: "group_dev_team"
+  },
+  {
+    id: "msg_g1_3",
+    senderId: "u5",
+    content: "I've pushed the latest changes to the repo",
+    timestamp: Date.now() - 3600000, // 1 hour ago
+    type: "text",
+    chatId: "group_dev_team"
+  }
 ];
 const Avatar: React.FC<{ userId: string; className?: string }> = ({ userId, className }) => { const u = team.find(t=>t.id===userId)!; return <div className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white shadow ${u.color} ${className}`} title={u.name}>{u.name[0]}</div>; };
 const Assignees: React.FC<{ ids: readonly string[] }> = ({ ids }) => <div className="flex -space-x-2">{ids.map(id => <Avatar key={id} userId={id} />)}</div>;
@@ -215,9 +375,1505 @@ const CreateWorkspaceModal: React.FC<{ open:boolean; onClose:()=>void; onCreate:
 };
 
 // ============================================================================
+// CHAT SYSTEM
+// ============================================================================
+
+// Individual Chat Item Component
+const ChatItem: React.FC<{
+  chat: ChatGroup;
+  isActive: boolean;
+  onClick: () => void;
+  currentUserId: string;
+}> = ({ chat, isActive, onClick, currentUserId }) => {
+  const getDisplayName = () => {
+    if (chat.type === 'direct') {
+      const otherUserId = chat.members.find(id => id !== currentUserId);
+      const otherUser = chatUsers.find(u => u.id === otherUserId);
+      return otherUser?.name || 'Unknown User';
+    }
+    return chat.name;
+  };
+
+  const getLastMessagePreview = () => {
+    if (!chat.lastMessage) return 'No messages yet';
+    const sender = chatUsers.find(u => u.id === chat.lastMessage!.senderId);
+    const senderName = sender?.name || 'Unknown';
+    const preview = chat.lastMessage.content.substring(0, 30);
+    return chat.type === 'group' ? `${senderName}: ${preview}` : preview;
+  };
+
+  const formatTime = (timestamp: number) => {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (minutes < 1) return 'now';
+    if (minutes < 60) return `${minutes}m`;
+    if (hours < 24) return `${hours}h`;
+    return `${days}d`;
+  };
+
+  const getOnlineStatus = () => {
+    if (chat.type === 'group') return null;
+    const otherUserId = chat.members.find(id => id !== currentUserId);
+    const otherUser = chatUsers.find(u => u.id === otherUserId);
+    return otherUser?.isOnline;
+  };
+
+  const isOnline = getOnlineStatus();
+
+  return (
+    <div
+      onClick={onClick}
+      className={`relative flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer transition-all ${
+        isActive ? 'bg-white/15' : 'hover:bg-white/8'
+      }`}
+    >
+      <div className="relative">
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${
+          chat.type === 'group' ? 'bg-violet-500' : 'bg-emerald-500'
+        }`}>
+          {chat.type === 'group' ? (
+            <Users className="h-4 w-4" />
+          ) : (
+            getDisplayName().charAt(0).toUpperCase()
+          )}
+        </div>
+        {isOnline && (
+          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-slate-800" />
+        )}
+      </div>
+      
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-slate-200 truncate">
+            {getDisplayName()}
+          </span>
+          {chat.lastMessage && (
+            <span className="text-xs text-slate-500">
+              {formatTime(chat.lastMessage.timestamp)}
+            </span>
+          )}
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-slate-400 truncate">
+            {getLastMessagePreview()}
+          </span>
+          {chat.unreadCount! > 0 && (
+            <span className="bg-cyan-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+              {chat.unreadCount}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Chat List Component
+const ChatList: React.FC<{
+  chats: ChatGroup[];
+  activeChat: string | null;
+  onSelectChat: (chatId: string) => void;
+  currentUserId: string;
+}> = ({ chats, activeChat, onSelectChat, currentUserId }) => {
+  const [searchQuery, setSearchQuery] = React.useState("");
+  
+  const filteredChats = chats.filter(chat => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    if (chat.type === 'group') {
+      return chat.name.toLowerCase().includes(query);
+    } else {
+      const otherUserId = chat.members.find(id => id !== currentUserId);
+      const otherUser = chatUsers.find(u => u.id === otherUserId);
+      return otherUser?.name.toLowerCase().includes(query);
+    }
+  });
+
+  return (
+    <div className="space-y-3">
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <input
+          type="text"
+          placeholder="Search conversations..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
+        />
+      </div>
+
+      {/* Chat Items */}
+      <div className="space-y-1 max-h-64 overflow-y-auto">
+        {filteredChats.map(chat => (
+          <ChatItem
+            key={chat.id}
+            chat={chat}
+            isActive={activeChat === chat.id}
+            onClick={() => onSelectChat(chat.id)}
+            currentUserId={currentUserId}
+          />
+        ))}
+        {filteredChats.length === 0 && (
+          <div className="text-center py-4 text-slate-500 text-xs">
+            No conversations found
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Chat Messages Component
+const ChatMessages: React.FC<{
+  chatId: string;
+  currentUserId: string;
+}> = ({ chatId, currentUserId }) => {
+  const messages = sampleChatMessages.filter(msg => msg.chatId === chatId);
+  const [newMessage, setNewMessage] = React.useState("");
+
+  const sendMessage = () => {
+    if (!newMessage.trim()) return;
+    // Here you would normally send the message to your backend
+    console.log('Sending message:', newMessage, 'to chat:', chatId);
+    setNewMessage("");
+  };
+
+  const formatMessageTime = (timestamp: number) => {
+    return new Date(timestamp).toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto space-y-3 p-4">
+        {messages.map(message => {
+          const sender = chatUsers.find(u => u.id === message.senderId);
+          const isOwnMessage = message.senderId === currentUserId;
+          
+          return (
+            <div
+              key={message.id}
+              className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+            >
+              <div className={`max-w-[70%] ${isOwnMessage ? 'order-2' : 'order-1'}`}>
+                {!isOwnMessage && (
+                  <div className="text-xs text-slate-400 mb-1">
+                    {sender?.name || 'Unknown'}
+                  </div>
+                )}
+                <div
+                  className={`rounded-2xl px-4 py-2 ${
+                    isOwnMessage
+                      ? 'bg-cyan-500 text-white'
+                      : 'bg-white/10 text-slate-200'
+                  }`}
+                >
+                  <p className="text-sm">{message.content}</p>
+                  <div className={`text-xs mt-1 ${
+                    isOwnMessage ? 'text-cyan-100' : 'text-slate-500'
+                  }`}>
+                    {formatMessageTime(message.timestamp)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Message Input */}
+      <div className="border-t border-white/10 p-4">
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Type a message..."
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+            className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
+          />
+          <button
+            onClick={sendMessage}
+            disabled={!newMessage.trim()}
+            className="p-2 bg-cyan-500 hover:bg-cyan-600 disabled:bg-slate-600 disabled:cursor-not-allowed rounded-lg transition-colors"
+          >
+            <Send className="h-4 w-4 text-white" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// CHATS PAGE - Teams-style Layout
+// ============================================================================
+const ChatsPage: React.FC = () => {
+  const [selectedChat, setSelectedChat] = React.useState<string | null>('team-dev');
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [newMessage, setNewMessage] = React.useState("");
+
+  const filteredChats = sampleChatGroups.filter(chat => 
+    chat.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const currentChat = sampleChatGroups.find(chat => chat.id === selectedChat);
+  const chatMessages = (sampleChatMessages || []).filter(msg => msg.chatId === selectedChat);
+
+  const sendMessage = () => {
+    if (!newMessage.trim() || !selectedChat) return;
+    
+    // In a real app, this would send to the backend
+    console.log('Sending message:', { chatId: selectedChat, message: newMessage });
+    setNewMessage("");
+  };
+
+  return (
+    <div className="flex h-full bg-[#1a1a1a]/50 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden">
+      {/* Left Sidebar - Chat List */}
+      <div className="w-80 border-r border-white/10 flex flex-col">
+        {/* Search Header */}
+        <div className="p-4 border-b border-white/10">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search chats..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400/40"
+            />
+          </div>
+        </div>
+
+        {/* Chat List */}
+        <div className="flex-1 overflow-y-auto">
+          {filteredChats.map(chat => {
+            const isActive = selectedChat === chat.id;
+            const lastMessage = sampleChatMessages
+              .filter(msg => msg.chatId === chat.id)
+              .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+
+            return (
+              <div
+                key={chat.id}
+                onClick={() => setSelectedChat(chat.id)}
+                className={`p-3 border-b border-white/5 cursor-pointer transition-colors ${
+                  isActive ? 'bg-cyan-500/20 border-l-2 border-l-cyan-400' : 'hover:bg-white/5'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    {chat.type === 'direct' ? (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center">
+                        <span className="text-sm font-medium text-slate-200">
+                          {chat.name.split(' ').map(n => n[0]).join('')}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-600 to-cyan-700 flex items-center justify-center">
+                        <Users className="h-5 w-5 text-white" />
+                      </div>
+                    )}
+                    {chat.type === 'direct' && (
+                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#1a1a1a]"></div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-medium text-slate-200 truncate">{chat.name}</h3>
+                      {lastMessage && (
+                        <span className="text-xs text-slate-500">
+                          {new Date(lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
+                    </div>
+                    {lastMessage && (
+                      <p className="text-xs text-slate-400 truncate mt-1">
+                        {lastMessage.senderId === '1' ? 'You: ' : ''}{lastMessage.content}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Right Side - Chat Messages */}
+      <div className="flex-1 flex flex-col">
+        {selectedChat && currentChat ? (
+          <>
+            {/* Chat Header */}
+            <div className="p-4 border-b border-white/10 flex items-center gap-3">
+              <div className="relative">
+                {currentChat.type === 'direct' ? (
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center">
+                    <span className="text-sm font-medium text-slate-200">
+                      {currentChat.name.split(' ').map(n => n[0]).join('')}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-600 to-cyan-700 flex items-center justify-center">
+                    <Users className="h-5 w-5 text-white" />
+                  </div>
+                )}
+                {currentChat.type === 'direct' && (
+                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#1a1a1a]"></div>
+                )}
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-slate-200">{currentChat.name}</h2>
+                <p className="text-sm text-slate-400">
+                  {currentChat.type === 'group' ? `${currentChat.participants.length} members` : 'Direct message'}
+                </p>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {chatMessages.map(message => {
+                const sender = chatUsers.find(user => user.id === message.senderId);
+                const isOwn = message.senderId === '1';
+
+                return (
+                  <div key={message.id} className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}>
+                    {!isOwn && (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-medium text-slate-200">
+                          {sender?.name.split(' ').map(n => n[0]).join('') || '?'}
+                        </span>
+                      </div>
+                    )}
+                    <div className={`max-w-xs lg:max-w-md xl:max-w-lg ${isOwn ? 'items-end' : 'items-start'} flex flex-col`}>
+                      {!isOwn && (
+                        <span className="text-xs text-slate-400 mb-1">{sender?.name}</span>
+                      )}
+                      <div
+                        className={`px-4 py-2 rounded-2xl ${
+                          isOwn 
+                            ? 'bg-cyan-600 text-white' 
+                            : 'bg-white/10 text-slate-200'
+                        }`}
+                      >
+                        <p className="text-sm">{message.content}</p>
+                      </div>
+                      <span className="text-xs text-slate-500 mt-1">
+                        {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Message Input */}
+            <div className="p-4 border-t border-white/10">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Type a message..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
+                  className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400/40"
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!newMessage.trim()}
+                  className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <MessageCircle className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-slate-300 mb-2">Select a chat</h3>
+              <p className="text-sm text-slate-500">Choose a conversation from the sidebar to start chatting</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// MY TASKS PAGE
+// ============================================================================
+const MyTasksPage: React.FC<{ 
+  workspace: Workspace | undefined; 
+  currentUserId: string;
+  onTaskClick?: (task: any) => void;
+  kanbanBoards: Record<string, KanbanBoardData>;
+}> = ({ workspace, currentUserId, onTaskClick, kanbanBoards }) => {
+  const [viewMode, setViewMode] = React.useState<'kanban' | 'table'>('kanban');
+  
+  // Get all tasks assigned to current user from all kanban boards
+  const myTasks = React.useMemo(() => {
+    if (!workspace) return { kanban: {}, table: [], columnOrder: [] };
+    
+    const allMyTasks: KanbanTask[] = [];
+    const kanbanColumns: Record<string, KanbanTask[]> = {};
+    const allColumns = new Set<string>();
+    
+    workspace.projects.forEach(project => {
+      project.boards.forEach(board => {
+        const boardData = kanbanBoards[board.id];
+        if (boardData) {
+          // Collect all column names from all boards
+          Object.keys(boardData.columns).forEach(columnName => {
+            allColumns.add(columnName);
+          });
+          
+          // Get tasks from all columns for this board
+          Object.entries(boardData.columns).forEach(([columnName, tasks]) => {
+            const userTasks = tasks.filter(task => 
+              task.assignees.includes(currentUserId)
+            );
+            
+            // Add project and board info to tasks
+            const enhancedTasks = userTasks.map(task => ({
+              ...task,
+              projectName: project.name,
+              boardName: board.name,
+              projectId: project.id,
+              boardId: board.id,
+              columnName
+            }));
+            
+            allMyTasks.push(...enhancedTasks);
+            
+            // Group by column for kanban view
+            if (!kanbanColumns[columnName]) {
+              kanbanColumns[columnName] = [];
+            }
+            kanbanColumns[columnName].push(...enhancedTasks);
+          });
+        }
+      });
+    });
+    
+    // Ensure all columns are represented, even if empty
+    allColumns.forEach(columnName => {
+      if (!kanbanColumns[columnName]) {
+        kanbanColumns[columnName] = [];
+      }
+    });
+    
+    // If no boards exist, show default columns
+    const columnOrder = Array.from(allColumns);
+    if (columnOrder.length === 0) {
+      const defaultColumns = ['Backlog', 'To Do', 'In Progress', 'Review', 'Done'];
+      defaultColumns.forEach(col => {
+        kanbanColumns[col] = [];
+      });
+      columnOrder.push(...defaultColumns);
+    }
+    
+    return {
+      kanban: kanbanColumns,
+      table: allMyTasks,
+      columnOrder
+    };
+  }, [workspace, currentUserId, kanbanBoards]);
+
+  if (!workspace) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <CheckSquare className="h-12 w-12 text-slate-400 mx-auto mb-3" />
+          <h3 className="text-lg font-medium text-slate-100 mb-2">No workspace selected</h3>
+          <p className="text-slate-400">Select a workspace to view your tasks</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header section matching BoardScreen style */}
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="relative flex items-center gap-2 overflow-x-auto max-w-full py-1 pl-1 pr-2 rounded-xl bg-white/5 border border-white/10">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 shrink-0">My Tasks:</span>
+          <div className="flex items-center gap-1">
+            <div className="rounded-lg px-3 py-1.5 text-[12px] font-medium bg-cyan-500/25 text-cyan-100 ring-1 ring-cyan-400/40 shadow-[0_0_0_1px_rgba(255,255,255,0.05)]">
+              {myTasks.table.length} tasks assigned
+              <span className="absolute inset-x-1 -bottom-1 h-px bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent"/>
+            </div>
+          </div>
+        </div>
+        
+        {/* View selector dropdown matching BoardScreen */}
+        <div className="relative">
+          <button
+            onClick={() => setViewMode('kanban')}
+            className={`mr-2 rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+              viewMode === 'kanban' 
+                ? 'bg-cyan-500/25 text-cyan-100 ring-1 ring-cyan-400/40' 
+                : 'bg-white/8 text-slate-300 ring-1 ring-white/10 hover:bg-white/12 hover:text-slate-200'
+            }`}
+          >
+            <Layers className="h-3.5 w-3.5 inline mr-1" />
+            Kanban
+          </button>
+          <button
+            onClick={() => setViewMode('table')}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+              viewMode === 'table' 
+                ? 'bg-cyan-500/25 text-cyan-100 ring-1 ring-cyan-400/40' 
+                : 'bg-white/8 text-slate-300 ring-1 ring-white/10 hover:bg-white/12 hover:text-slate-200'
+            }`}
+          >
+            <BarChart3 className="h-3.5 w-3.5 inline mr-1" />
+            Table
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="space-y-6">
+        {viewMode === 'kanban' ? (
+          <GlassCard className="p-6 overflow-hidden">
+            <div className="overflow-x-auto pb-2 w-full">
+              <div className="flex items-start gap-4" style={{ minWidth: 'fit-content' }}>
+                {myTasks.columnOrder.map((columnName) => (
+                  <div
+                    key={columnName}
+                    className="rounded-xl border border-white/10 bg-white/5 p-4 w-64 shrink-0"
+                  >
+                    <div className="mb-4 flex items-center justify-between">
+                      <h3 className="font-semibold text-slate-200">{columnName}</h3>
+                      <span className="rounded-full bg-white/10 px-2 py-1 text-xs text-slate-300">
+                        {myTasks.kanban[columnName]?.length || 0}
+                      </span>
+                    </div>
+                    <div className="space-y-3">
+                      {(myTasks.kanban[columnName] || []).length === 0 ? (
+                        <div className="text-center py-8">
+                          <div className="text-slate-500 text-xs">No tasks in {columnName}</div>
+                        </div>
+                      ) : (
+                        (myTasks.kanban[columnName] || []).map((task: any) => (
+                          <div
+                            key={`${task.boardId}-${task.id}`}
+                            onClick={() => onTaskClick?.(task)}
+                            className="cursor-pointer rounded-lg border border-white/10 bg-white/5 p-3 transition hover:bg-white/10"
+                          >
+                            <div className="mb-2 font-medium text-slate-100">{task.title}</div>
+                            <div className="mb-2 text-xs text-slate-400">
+                              {task.projectName} • {task.boardName}
+                            </div>
+                            {task.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mb-2">
+                                {task.tags.map((tag: string, i: number) => (
+                                  <span 
+                                    key={i} 
+                                    className="rounded bg-cyan-500/20 px-2 py-1 text-xs text-cyan-200"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Assignees ids={task.assignees} />
+                              </div>
+                              {task.points > 0 && (
+                                <span className="text-xs text-slate-400 bg-white/10 px-2 py-1 rounded">
+                                  {task.points}pt
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </GlassCard>
+        ) : (
+          <GlassCard className="overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-slate-100">All My Tasks</span>
+                <span className="text-xs text-slate-400 bg-white/5 px-2 py-1 rounded-full">
+                  {myTasks.table.length}
+                </span>
+              </div>
+            </div>
+            <div className="max-h-[400px] overflow-auto">
+              <table className="w-full border-separate border-spacing-0 text-xs">
+                <thead>
+                  <tr className="sticky top-0 backdrop-blur bg-white/5">
+                    <th className="border-b border-white/10 px-4 py-2 text-left font-medium uppercase tracking-wider text-[10px] text-slate-300">Task</th>
+                    <th className="border-b border-white/10 px-4 py-2 text-left font-medium uppercase tracking-wider text-[10px] text-slate-300">Project</th>
+                    <th className="border-b border-white/10 px-4 py-2 text-left font-medium uppercase tracking-wider text-[10px] text-slate-300">Board</th>
+                    <th className="border-b border-white/10 px-4 py-2 text-left font-medium uppercase tracking-wider text-[10px] text-slate-300">Status</th>
+                    <th className="border-b border-white/10 px-4 py-2 text-left font-medium uppercase tracking-wider text-[10px] text-slate-300">Assignees</th>
+                    <th className="border-b border-white/10 px-4 py-2 text-left font-medium uppercase tracking-wider text-[10px] text-slate-300">Tags</th>
+                    <th className="border-b border-white/10 px-4 py-2 text-left font-medium uppercase tracking-wider text-[10px] text-slate-300">Points</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {myTasks.table.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center">
+                        <div className="text-slate-400">
+                          <CheckSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">No tasks assigned to you yet</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    myTasks.table.map((task: any) => (
+                      <tr 
+                        key={`${task.boardId}-${task.id}`}
+                        className="hover:bg-white/5 cursor-pointer transition-colors"
+                        onClick={() => onTaskClick?.(task)}
+                      >
+                        <td className="px-4 py-2 text-slate-100 truncate max-w-[320px]" title={task.title}>
+                          <div className="font-medium">{task.title}</div>
+                        </td>
+                        <td className="px-4 py-2 text-slate-400">{task.projectName}</td>
+                        <td className="px-4 py-2 text-slate-400">{task.boardName}</td>
+                        <td className="px-4 py-2">
+                          <span className="text-xs px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-300">
+                            {task.columnName}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2">
+                          <Assignees ids={task.assignees} />
+                        </td>
+                        <td className="px-4 py-2">
+                          <div className="flex flex-wrap gap-1">
+                            {task.tags.map((tag: string, i: number) => (
+                              <span 
+                                key={i} 
+                                className="text-xs px-2 py-0.5 rounded-full bg-slate-500/20 text-slate-300"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-4 py-2 text-slate-400">{task.points}pt</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </GlassCard>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// CHAT PAGE
+// ============================================================================
+const ChatPage: React.FC<{ 
+  workspace: Workspace | undefined; 
+  currentUserId: string;
+}> = ({ workspace, currentUserId }) => {
+  const [selectedChatId, setSelectedChatId] = React.useState<string | null>(null);
+  const [messageInput, setMessageInput] = React.useState('');
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [showNewChatModal, setShowNewChatModal] = React.useState(false);
+
+  // Mock data - will be replaced with real backend integration
+  const [users] = React.useState<ChatUser[]>([
+    { id: '1', name: 'John Doe', isOnline: true, avatar: 'JD' },
+    { id: '2', name: 'Sarah Wilson', isOnline: true, avatar: 'SW' },
+    { id: '3', name: 'Mike Johnson', isOnline: false, lastSeen: Date.now() - 3600000, avatar: 'MJ' },
+    { id: '4', name: 'Lisa Chen', isOnline: true, avatar: 'LC' },
+    { id: '5', name: 'David Brown', isOnline: false, lastSeen: Date.now() - 7200000, avatar: 'DB' },
+  ]);
+
+  const [chatGroups, setChatGroups] = React.useState<ChatGroup[]>([
+    {
+      id: 'direct-1-2',
+      name: 'John Doe',
+      type: 'direct',
+      members: ['1', '2'],
+      createdBy: '1',
+      createdAt: Date.now() - 86400000,
+      lastMessage: {
+        id: 'msg-1',
+        senderId: '2',
+        content: 'Hey, how\'s the project going?',
+        timestamp: Date.now() - 3600000,
+        type: 'text'
+      },
+      unreadCount: 2
+    },
+    {
+      id: 'group-dev-team',
+      name: 'Development Team',
+      type: 'group',
+      members: ['1', '2', '3', '4'],
+      createdBy: '1',
+      createdAt: Date.now() - 172800000,
+      lastMessage: {
+        id: 'msg-2',
+        senderId: '3',
+        content: 'Let\'s discuss the new features in tomorrow\'s meeting',
+        timestamp: Date.now() - 7200000,
+        type: 'text'
+      },
+      unreadCount: 0
+    },
+    {
+      id: 'direct-1-4',
+      name: 'Lisa Chen',
+      type: 'direct',
+      members: ['1', '4'],
+      createdBy: '1',
+      createdAt: Date.now() - 259200000,
+      lastMessage: {
+        id: 'msg-3',
+        senderId: '4',
+        content: 'Thanks for the code review!',
+        timestamp: Date.now() - 14400000,
+        type: 'text'
+      },
+      unreadCount: 0
+    }
+  ]);
+
+  const [messages, setMessages] = React.useState<Record<string, ChatMessage[]>>({
+    'direct-1-2': [
+      {
+        id: 'msg-1-1',
+        senderId: '2',
+        content: 'Hey there! How\'s everything going?',
+        timestamp: Date.now() - 7200000,
+        type: 'text'
+      },
+      {
+        id: 'msg-1-2',
+        senderId: '1',
+        content: 'Going well! Just finished the new dashboard feature.',
+        timestamp: Date.now() - 7000000,
+        type: 'text'
+      },
+      {
+        id: 'msg-1-3',
+        senderId: '2',
+        content: 'Hey, how\'s the project going?',
+        timestamp: Date.now() - 3600000,
+        type: 'text'
+      }
+    ],
+    'group-dev-team': [
+      {
+        id: 'msg-2-1',
+        senderId: '1',
+        content: 'Good morning team! Ready for today\'s sprint?',
+        timestamp: Date.now() - 10800000,
+        type: 'text'
+      },
+      {
+        id: 'msg-2-2',
+        senderId: '3',
+        content: 'Yes! I\'ve completed the API endpoints we discussed.',
+        timestamp: Date.now() - 9600000,
+        type: 'text'
+      },
+      {
+        id: 'msg-2-3',
+        senderId: '4',
+        content: 'UI components are also ready for testing.',
+        timestamp: Date.now() - 8400000,
+        type: 'text'
+      },
+      {
+        id: 'msg-2-4',
+        senderId: '3',
+        content: 'Let\'s discuss the new features in tomorrow\'s meeting',
+        timestamp: Date.now() - 7200000,
+        type: 'text'
+      }
+    ],
+    'direct-1-4': [
+      {
+        id: 'msg-3-1',
+        senderId: '1',
+        content: 'Hi Lisa, could you review the PR when you get a chance?',
+        timestamp: Date.now() - 18000000,
+        type: 'text'
+      },
+      {
+        id: 'msg-3-2',
+        senderId: '4',
+        content: 'Sure! I\'ll take a look at it this afternoon.',
+        timestamp: Date.now() - 16200000,
+        type: 'text'
+      },
+      {
+        id: 'msg-3-3',
+        senderId: '4',
+        content: 'Thanks for the code review!',
+        timestamp: Date.now() - 14400000,
+        type: 'text'
+      }
+    ]
+  });
+
+  const selectedChat = chatGroups.find(chat => chat.id === selectedChatId);
+  const chatMessages = selectedChatId ? messages[selectedChatId] || [] : [];
+
+  const sendMessage = () => {
+    if (!messageInput.trim() || !selectedChatId) return;
+    
+    const newMessage: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      senderId: currentUserId,
+      content: messageInput.trim(),
+      timestamp: Date.now(),
+      type: 'text'
+    };
+
+    setMessages(prev => ({
+      ...prev,
+      [selectedChatId]: [...(prev[selectedChatId] || []), newMessage]
+    }));
+
+    // Update last message in chat group
+    setChatGroups(prev => prev.map(chat => 
+      chat.id === selectedChatId 
+        ? { ...chat, lastMessage: newMessage, unreadCount: 0 }
+        : chat
+    ));
+
+    setMessageInput('');
+  };
+
+  const getUserInfo = (userId: string) => {
+    return users.find(user => user.id === userId) || { 
+      id: userId, 
+      name: `User ${userId}`, 
+      isOnline: false, 
+      avatar: userId.slice(0, 2).toUpperCase() 
+    };
+  };
+
+  const formatTime = (timestamp: number) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffInHours < 48) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+  };
+
+  const filteredChats = chatGroups.filter(chat =>
+    chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (chat.lastMessage?.content.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  if (!workspace) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <MessageCircle className="h-12 w-12 text-slate-400 mx-auto mb-3" />
+          <h3 className="text-lg font-medium text-slate-100 mb-2">No workspace selected</h3>
+          <p className="text-slate-400">Select a workspace to access chat</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex h-full">
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {selectedChat ? (
+          <>
+            {/* Chat Header */}
+            <div className="p-4 border-b border-white/10 bg-white/5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-sm font-semibold">
+                      {selectedChat.type === 'direct' 
+                        ? getUserInfo(selectedChat.members.find(id => id !== currentUserId) || '').avatar
+                        : selectedChat.name.slice(0, 2).toUpperCase()
+                      }
+                    </div>
+                    {selectedChat.type === 'direct' && (
+                      <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border border-slate-900" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-100">
+                      {selectedChat.type === 'direct' 
+                        ? getUserInfo(selectedChat.members.find(id => id !== currentUserId) || '').name
+                        : selectedChat.name
+                      }
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      {selectedChat.type === 'direct' 
+                        ? getUserInfo(selectedChat.members.find(id => id !== currentUserId) || '').isOnline 
+                          ? 'Online' 
+                          : 'Offline'
+                        : `${selectedChat.members.length} members`
+                      }
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <button className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/10">
+                    <Search className="h-4 w-4" />
+                  </button>
+                  <button className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/10">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {chatMessages.map((message, index) => {
+                const sender = getUserInfo(message.senderId);
+                const isCurrentUser = message.senderId === currentUserId;
+                const showAvatar = index === 0 || chatMessages[index - 1].senderId !== message.senderId;
+                
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex gap-3 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {!isCurrentUser && showAvatar && (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-sm font-semibold">
+                        {sender.avatar}
+                      </div>
+                    )}
+                    {!isCurrentUser && !showAvatar && <div className="w-8" />}
+                    
+                    <div className={`max-w-xs lg:max-w-md ${isCurrentUser ? 'order-1' : ''}`}>
+                      {!isCurrentUser && showAvatar && (
+                        <p className="text-xs text-slate-400 mb-1">{sender.name}</p>
+                      )}
+                      <div
+                        className={`px-4 py-2 rounded-2xl ${
+                          isCurrentUser
+                            ? 'bg-cyan-500 text-white'
+                            : 'bg-white/10 text-slate-100'
+                        }`}
+                      >
+                        <p className="text-sm">{message.content}</p>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {formatTime(message.timestamp)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Message Input */}
+            <div className="p-4 border-t border-white/10 bg-white/5">
+              <div className="flex items-end gap-3">
+                <div className="flex-1">
+                  <textarea
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                      }
+                    }}
+                    placeholder="Type a message..."
+                    rows={1}
+                    className="w-full px-4 py-3 bg-white/10 border border-white/10 rounded-lg text-slate-100 placeholder-slate-400 focus:outline-none focus:border-cyan-400/40 resize-none"
+                  />
+                </div>
+                <button
+                  onClick={sendMessage}
+                  disabled={!messageInput.trim()}
+                  className="p-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <MessageCircle className="h-16 w-16 text-slate-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-slate-100 mb-2">Select a conversation</h3>
+              <p className="text-slate-400">Choose from your existing conversations or start a new one</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Right Sidebar - Chat List */}
+      <div className="w-80 border-l border-white/10 flex flex-col">
+        {/* Header */}
+        <div className="p-4 border-b border-white/10">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-slate-100">Conversations</h2>
+            <button
+              onClick={() => setShowNewChatModal(true)}
+              className="p-2 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+          
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search conversations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/10 rounded-lg text-slate-100 placeholder-slate-400 focus:outline-none focus:border-cyan-400/40"
+            />
+          </div>
+        </div>
+
+        {/* Chat List */}
+        <div className="flex-1 overflow-y-auto">
+          {filteredChats.map(chat => {
+            const isSelected = selectedChatId === chat.id;
+            const otherUser = chat.type === 'direct' 
+              ? getUserInfo(chat.members.find(id => id !== currentUserId) || '')
+              : null;
+            
+            return (
+              <div
+                key={chat.id}
+                onClick={() => setSelectedChatId(chat.id)}
+                className={`p-4 cursor-pointer transition-colors border-b border-white/5 ${
+                  isSelected ? 'bg-cyan-500/10 border-l-2 border-l-cyan-400' : 'hover:bg-white/5'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  {/* Avatar */}
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-sm font-semibold">
+                      {chat.type === 'direct' ? otherUser?.avatar : chat.name.slice(0, 2).toUpperCase()}
+                    </div>
+                    {chat.type === 'direct' && otherUser?.isOnline && (
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900" />
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-slate-100 truncate">
+                        {chat.type === 'direct' ? otherUser?.name : chat.name}
+                      </h4>
+                      <span className="text-xs text-slate-400">
+                        {chat.lastMessage ? formatTime(chat.lastMessage.timestamp) : ''}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-slate-400 truncate">
+                        {chat.lastMessage?.content || 'No messages yet'}
+                      </p>
+                      {chat.unreadCount && chat.unreadCount > 0 && (
+                        <span className="ml-2 bg-cyan-500 text-white text-xs rounded-full px-2 py-0.5 min-w-[20px] text-center">
+                          {chat.unreadCount}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// MINDSYNC AI PAGE
+// ============================================================================
+const MindSyncAIPage: React.FC<{ 
+  workspace: Workspace | undefined; 
+  currentUserId: string;
+}> = ({ workspace, currentUserId }) => {
+  const [messages, setMessages] = React.useState<Array<{
+    id: string;
+    content: string;
+    type: 'user' | 'ai';
+    timestamp: number;
+  }>>([
+    {
+      id: 'welcome',
+      content: "Hello! I'm MindSync AI, your intelligent assistant. I can help you with project management, task analysis, code reviews, documentation, and much more. How can I assist you today?",
+      type: 'ai',
+      timestamp: Date.now() - 60000
+    }
+  ]);
+  
+  const [inputMessage, setInputMessage] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [conversationHistory, setConversationHistory] = React.useState<Array<{
+    id: string;
+    title: string;
+    timestamp: number;
+    messageCount: number;
+  }>>([
+    {
+      id: 'conv-1',
+      title: 'Project Planning Discussion',
+      timestamp: Date.now() - 86400000,
+      messageCount: 12
+    },
+    {
+      id: 'conv-2',
+      title: 'Code Review Questions',
+      timestamp: Date.now() - 172800000,
+      messageCount: 8
+    },
+    {
+      id: 'conv-3',
+      title: 'Task Optimization Tips',
+      timestamp: Date.now() - 259200000,
+      messageCount: 15
+    }
+  ]);
+  
+  const [activeConversation, setActiveConversation] = React.useState<string | null>(null);
+  const [showSidebar, setShowSidebar] = React.useState(true);
+
+  // Suggested prompts for quick start
+  const suggestedPrompts = [
+    "Analyze my current tasks and suggest optimizations",
+    "Help me write better user stories for my project",
+    "Review this code snippet for best practices",
+    "Generate a project timeline based on my tasks",
+    "Suggest team communication improvements",
+    "Create documentation templates for my project"
+  ];
+
+  const sendMessage = async () => {
+    if (!inputMessage.trim()) return;
+
+    const userMessage = {
+      id: `user-${Date.now()}`,
+      content: inputMessage.trim(),
+      type: 'user' as const,
+      timestamp: Date.now()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    setIsLoading(true);
+
+    // Simulate AI response (in real implementation, this would call your AI service)
+    setTimeout(() => {
+      const aiResponse = {
+        id: `ai-${Date.now()}`,
+        content: generateAIResponse(userMessage.content),
+        type: 'ai' as const,
+        timestamp: Date.now()
+      };
+      
+      setMessages(prev => [...prev, aiResponse]);
+      setIsLoading(false);
+    }, 1500);
+  };
+
+  // Mock AI response generator (replace with actual AI service)
+  const generateAIResponse = (userInput: string): string => {
+    const responses = [
+      "That's a great question! Based on your current project setup, I'd recommend focusing on breaking down larger tasks into smaller, manageable chunks. This approach typically improves team velocity by 30-40%.",
+      
+      "I can help you with that! Here's what I suggest:\n\n1. **Prioritize by impact**: Focus on high-impact, low-effort tasks first\n2. **Use time-boxing**: Allocate specific time slots for different types of work\n3. **Regular reviews**: Schedule weekly retrospectives to assess progress\n\nWould you like me to elaborate on any of these points?",
+      
+      "Excellent! Let me analyze your request. For project planning, I recommend using the SMART criteria:\n\n• **Specific**: Clearly defined objectives\n• **Measurable**: Quantifiable outcomes\n• **Achievable**: Realistic goals\n• **Relevant**: Aligned with business objectives\n• **Time-bound**: Clear deadlines\n\nThis framework has proven effective across various project types.",
+      
+      "Based on industry best practices and your project context, here are my recommendations:\n\n🎯 **Focus Areas:**\n- Streamline your current workflow\n- Improve team communication\n- Implement automated testing\n- Regular code reviews\n\nWould you like me to dive deeper into any of these areas?",
+      
+      "That's an insightful question! From what I can see in your workspace, you have several opportunities for optimization. Let me break this down into actionable steps that you can implement right away."
+    ];
+    
+    return responses[Math.floor(Math.random() * responses.length)];
+  };
+
+  const startNewConversation = () => {
+    setMessages([
+      {
+        id: 'welcome-new',
+        content: "Hello! I'm ready to help you with a new conversation. What would you like to discuss?",
+        type: 'ai',
+        timestamp: Date.now()
+      }
+    ]);
+    setActiveConversation(null);
+  };
+
+  const formatTime = (timestamp: number) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 1) {
+      return 'Just now';
+    } else if (diffInHours < 24) {
+      return `${Math.floor(diffInHours)}h ago`;
+    } else if (diffInHours < 48) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+  };
+
+  if (!workspace) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 flex items-center justify-center">
+            <div className="w-8 h-8 bg-white rounded-full"></div>
+          </div>
+          <h3 className="text-lg font-medium text-slate-100 mb-2">No workspace selected</h3>
+          <p className="text-slate-400">Select a workspace to access MindSync AI</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex h-full bg-gradient-to-br from-slate-900/50 to-slate-800/50">
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <div className="p-4 border-b border-white/10 bg-white/5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 flex items-center justify-center">
+                  <div className="w-3 h-3 bg-white rounded-full"></div>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-100">MindSync AI</h3>
+                  <p className="text-xs text-slate-400">Always ready to help</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowSidebar(!showSidebar)}
+                className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/10"
+              >
+                <Layers className="h-4 w-4" />
+              </button>
+              <button className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/10">
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {messages.map((message, index) => (
+            <div
+              key={message.id}
+              className={`flex gap-4 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              {message.type === 'ai' && (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 flex items-center justify-center shrink-0">
+                  <div className="w-4 h-4 bg-white rounded-full"></div>
+                </div>
+              )}
+              
+              <div className={`max-w-3xl ${message.type === 'user' ? 'order-1' : ''}`}>
+                <div
+                  className={`px-4 py-3 rounded-2xl ${
+                    message.type === 'user'
+                      ? 'bg-cyan-500 text-white'
+                      : 'bg-white/10 text-slate-100 border border-white/10'
+                  }`}
+                >
+                  <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                    {message.content}
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">
+                  {formatTime(message.timestamp)}
+                </p>
+              </div>
+
+              {message.type === 'user' && (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center text-white text-sm font-semibold shrink-0">
+                  {currentUserId.slice(0, 1).toUpperCase()}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {isLoading && (
+            <div className="flex gap-4 justify-start">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 flex items-center justify-center">
+                <div className="w-4 h-4 bg-white rounded-full"></div>
+              </div>
+              <div className="bg-white/10 border border-white/10 px-4 py-3 rounded-2xl">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Suggested Prompts (show only if no messages except welcome) */}
+          {messages.length <= 1 && (
+            <div className="mt-8">
+              <h3 className="text-sm font-medium text-slate-300 mb-4">Try asking me about:</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {suggestedPrompts.map((prompt, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setInputMessage(prompt)}
+                    className="text-left p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-sm text-slate-300"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Message Input */}
+        <div className="p-4 border-t border-white/10 bg-white/5">
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <textarea
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                placeholder="Ask MindSync AI anything about your projects, tasks, or development..."
+                rows={1}
+                disabled={isLoading}
+                className="w-full px-4 py-3 bg-white/10 border border-white/10 rounded-lg text-slate-100 placeholder-slate-400 focus:outline-none focus:border-cyan-400/40 resize-none disabled:opacity-50"
+              />
+            </div>
+            <button
+              onClick={sendMessage}
+              disabled={!inputMessage.trim() || isLoading}
+              className="p-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-lg hover:from-cyan-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          </div>
+          <p className="text-xs text-slate-500 mt-2 text-center">
+            MindSync AI can make mistakes. Consider checking important information.
+          </p>
+        </div>
+      </div>
+
+      {/* Right Sidebar - Conversation History */}
+      {showSidebar && (
+        <div className="w-80 border-l border-white/10 flex flex-col bg-white/5">
+          {/* Header */}
+          <div className="p-4 border-b border-white/10">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 flex items-center justify-center">
+                  <div className="w-4 h-4 bg-white rounded-full"></div>
+                </div>
+                <h2 className="text-lg font-semibold text-slate-100">MindSync AI</h2>
+              </div>
+              <button
+                onClick={startNewConversation}
+                className="p-2 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 transition-colors"
+                title="New Conversation"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+            
+            <p className="text-xs text-slate-400">Your intelligent project assistant</p>
+          </div>
+
+          {/* Recent Conversations */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Recent Conversations</h3>
+              <div className="space-y-2">
+                {conversationHistory.map(conv => (
+                  <div
+                    key={conv.id}
+                    onClick={() => setActiveConversation(conv.id)}
+                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                      activeConversation === conv.id 
+                        ? 'bg-cyan-500/10 border border-cyan-400/30' 
+                        : 'hover:bg-white/5 border border-white/10'
+                    }`}
+                  >
+                    <h4 className="font-medium text-slate-200 text-sm mb-1 truncate">{conv.title}</h4>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-slate-400">{conv.messageCount} messages</span>
+                      <span className="text-xs text-slate-500">{formatTime(conv.timestamp)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================================
 // SIDEBAR (Projects only, inline rename + per-project menu)
 // ============================================================================
-const Sidebar: React.FC<{ workspace: Workspace | undefined; active: { projectId?: string; boardId?: string }; onSelectProject:(id:string)=>void; onAddProject:()=>void; onRenameProject:(id:string,newName:string)=>void; onAddBoard:(projectId:string)=>void; onDeleteProject:(id:string)=>void; onCollapse:()=>void; }> = ({ workspace, active, onSelectProject, onAddProject, onRenameProject, onAddBoard, onDeleteProject, onCollapse }) => {
+const Sidebar: React.FC<{ workspace: Workspace | undefined; active: { projectId?: string; boardId?: string }; onSelectProject:(id:string)=>void; onAddProject:()=>void; onRenameProject:(id:string,newName:string)=>void; onAddBoard:(projectId:string)=>void; onDeleteProject:(id:string)=>void; onCollapse:()=>void; sidebarView: 'projects' | 'mytasks' | 'chat' | 'ai'; setSidebarView: (view: 'projects' | 'mytasks' | 'chat' | 'ai') => void; }> = ({ workspace, active, onSelectProject, onAddProject, onRenameProject, onAddBoard, onDeleteProject, onCollapse, sidebarView, setSidebarView }) => {
   if(!workspace) return <aside className="hidden w-64 shrink-0 md:block"/>;
   const projects = workspace.projects;
   const [menuFor,setMenuFor]=React.useState<string|null>(null);
@@ -229,13 +1885,79 @@ const Sidebar: React.FC<{ workspace: Workspace | undefined; active: { projectId?
     <aside className="hidden w-64 shrink-0 md:block border-r border-white/10 pr-2">
       <div className="sticky top-12 space-y-3">
         {/* Sidebar header with collapse control (outside cards) */}
-        <div className="flex items-center justify-between px-3 py-3 mb-2">
+        <div className="flex items-center justify-between px-3 py-6.5 mb-2">
           <button onClick={onCollapse} aria-label="Collapse sidebar" className="rounded-md p-2 text-slate-400 hover:text-slate-200 hover:bg-white/10 transition-colors">
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Projects</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">work options</span>
           <div className="w-8" />
         </div>
+
+        {/* My Tasks Button */}
+        <GlassCard className={`p-3 cursor-pointer transition-all ${
+          sidebarView === 'mytasks' 
+            ? 'ring-1 ring-cyan-400/40 bg-white/15 shadow-[0_0_0_1px_rgba(255,255,255,0.05)]' 
+            : 'hover:bg-white/8'
+        }`}>
+          <button
+            onClick={() => setSidebarView('mytasks')}
+            className="w-full flex items-center gap-2 text-left"
+          >
+            <CheckSquare className={`h-4 w-4 ${
+              sidebarView === 'mytasks' ? 'text-cyan-300' : 'text-slate-400'
+            }`} />
+            <span className={`font-medium text-sm ${
+              sidebarView === 'mytasks' ? 'text-cyan-100' : 'text-slate-300'
+            }`}>
+              My Tasks
+            </span>
+          </button>
+        </GlassCard>
+
+        {/* Chat Button */}
+        <GlassCard className={`p-3 cursor-pointer transition-all ${
+          sidebarView === 'chat' 
+            ? 'ring-1 ring-cyan-400/40 bg-white/15 shadow-[0_0_0_1px_rgba(255,255,255,0.05)]' 
+            : 'hover:bg-white/8'
+        }`}>
+          <button
+            onClick={() => setSidebarView('chat')}
+            className="w-full flex items-center gap-2 text-left"
+          >
+            <MessageCircle className={`h-4 w-4 ${
+              sidebarView === 'chat' ? 'text-cyan-300' : 'text-slate-400'
+            }`} />
+            <span className={`font-medium text-sm ${
+              sidebarView === 'chat' ? 'text-cyan-100' : 'text-slate-300'
+            }`}>
+              Chat
+            </span>
+          </button>
+        </GlassCard>
+
+        {/* MindSync AI Button */}
+        <GlassCard className={`p-3 cursor-pointer transition-all ${
+          sidebarView === 'ai' 
+            ? 'ring-1 ring-cyan-400/40 bg-white/15 shadow-[0_0_0_1px_rgba(255,255,255,0.05)]' 
+            : 'hover:bg-white/8'
+        }`}>
+          <button
+            onClick={() => setSidebarView('ai')}
+            className="w-full flex items-center gap-2 text-left"
+          >
+            <div className={`h-4 w-4 rounded-full ${
+              sidebarView === 'ai' ? 'bg-gradient-to-r from-cyan-400 to-purple-500' : 'bg-slate-400'
+            } flex items-center justify-center`}>
+              <div className="w-2 h-2 bg-white rounded-full"></div>
+            </div>
+            <span className={`font-medium text-sm ${
+              sidebarView === 'ai' ? 'text-cyan-100' : 'text-slate-300'
+            }`}>
+              MindSync AI
+            </span>
+          </button>
+        </GlassCard>
+
         <GlassCard className="p-3">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Projects</div>
@@ -245,7 +1967,7 @@ const Sidebar: React.FC<{ workspace: Workspace | undefined; active: { projectId?
           <div className="space-y-1">
             {projects.map(p=>{ const isActive=active.projectId===p.id; const open=menuFor===p.id; const isEditing=editingId===p.id; return (
               <div key={p.id} data-project-row className={`relative group flex items-center rounded-lg px-2 py-1.5 text-[13px] ${isActive?'bg-white/12 text-slate-100':'text-slate-300 hover:bg-white/6'}`}>
-                {isEditing ? <input autoFocus value={editingValue} onChange={e=>setEditingValue(e.target.value)} onBlur={commitRename} onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); commitRename(); } if(e.key==='Escape'){ e.preventDefault(); setEditingId(null); } }} className="mr-1 flex-1 rounded-md border border-white/10 bg-white/10 px-2 py-1 text-xs text-slate-100 outline-none focus:border-cyan-400/40"/> : <button className="flex-1 truncate text-left" onClick={()=>onSelectProject(p.id)} title={p.name}>{p.name}</button>}
+                {isEditing ? <input autoFocus value={editingValue} onChange={e=>setEditingValue(e.target.value)} onBlur={commitRename} onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); commitRename(); } if(e.key==='Escape'){ e.preventDefault(); setEditingId(null); } }} className="mr-1 flex-1 rounded-md border border-white/10 bg-white/10 px-2 py-1 text-xs text-slate-100 outline-none focus:border-cyan-400/40"/> : <button className="flex-1 truncate text-left" onClick={()=>{onSelectProject(p.id); setSidebarView('projects');}} title={p.name}>{p.name}</button>}
                 {!isEditing && <button onClick={(e)=>{ e.stopPropagation(); setMenuFor(m=>m===p.id?null:p.id); }} className="ml-2 rounded-md p-1 text-slate-400 hover:text-slate-200 hover:bg-white/10"><Plus className="h-4 w-4"/></button>}
                 {open && !isEditing && <div className="absolute right-0 top-8 z-40 w-40 rounded-xl border border-white/10 bg-[#141c24]/95 p-1 backdrop-blur-xl shadow-xl">
                   <button onClick={()=>{ setMenuFor(null); setEditingId(p.id); setEditingValue(p.name); }} className="w-full rounded-lg px-2 py-1.5 text-left text-[12px] text-slate-300 hover:bg-white/10">Rename</button>
@@ -576,7 +2298,7 @@ const BoardScreen: React.FC<{ board: Board; boards: Board[]; onSelectBoard:(id:s
       if (taskModal.mode === 'new') {
         const isDev = board.name === 'Development';
         const newTask: any = { 
-          id: 't_' + Math.random().toString(36).slice(2,8), 
+          id: 't' + Math.random().toString(36).slice(2,8), 
           title: patch.title || 'Untitled', 
           tags: isDev ? [] : (patch.tags || []),
           labels: isDev ? (patch.labels || []) : [],
@@ -3724,6 +5446,23 @@ const GlassDashboardPage: React.FC = () => {
   const [showCreateWs, setShowCreateWs] = React.useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const [currentView, setCurrentView] = React.useState<'dashboard' | 'boards' | 'project-home'>('boards');
+  const [sidebarView, setSidebarView] = React.useState<'projects' | 'mytasks' | 'chat' | 'ai'>('projects');
+  const [kanbanBoards, setKanbanBoards] = React.useState<Record<string, KanbanBoardData>>({});
+
+  // Initialize kanban boards for all boards in all workspaces
+  React.useEffect(() => {
+    const initialBoards: Record<string, KanbanBoardData> = {};
+    workspaces.forEach(workspace => {
+      workspace.projects.forEach(project => {
+        project.boards.forEach(board => {
+          if (!initialBoards[board.id]) {
+            initialBoards[board.id] = createInitialKanbanData();
+          }
+        });
+      });
+    });
+    setKanbanBoards(initialBoards);
+  }, [workspaces]);
 
   const activeWs = workspaces.find(w => w.id === activeWsId);
   const activeProject = activeWs?.projects.find(p => p.id === activeProjectId);
@@ -3752,6 +5491,11 @@ const GlassDashboardPage: React.FC = () => {
         boards: [...p.boards, newBoard]
       } : p)
     } : w));
+    // Initialize kanban data for the new board
+    setKanbanBoards(prev => ({
+      ...prev,
+      [newBoard.id]: createInitialKanbanData()
+    }));
     setActiveBoardId(newBoard.id);
   };
 
@@ -3772,6 +5516,11 @@ const GlassDashboardPage: React.FC = () => {
         boards: [...p.boards, newBoard]
       } : p)
     } : w));
+    // Initialize kanban data for the new board
+    setKanbanBoards(prev => ({
+      ...prev,
+      [newBoard.id]: createInitialKanbanData()
+    }));
     // Switch to the new board
     setActiveProjectId(projectId);
     setActiveBoardId(newBoard.id);
@@ -3796,12 +5545,26 @@ const GlassDashboardPage: React.FC = () => {
       } : p)
     } : w));
     
+    // Remove kanban data for the deleted board
+    setKanbanBoards(prev => {
+      const { [id]: removed, ...rest } = prev;
+      return rest;
+    });
+    
     const remainingBoards = boards.filter(b => b.id !== id);
     if (activeBoardId === id && remainingBoards.length > 0) {
       setActiveBoardId(remainingBoards[0].id);
     }
     
     setPinnedBoardIds(prev => prev.filter(x => x !== id));
+  };
+
+  // Function to update kanban board data
+  const updateKanbanBoard = (boardId: string, newData: KanbanBoardData) => {
+    setKanbanBoards(prev => ({
+      ...prev,
+      [boardId]: newData
+    }));
   };
 
   if (!activeBoard) {
@@ -3828,16 +5591,19 @@ const GlassDashboardPage: React.FC = () => {
         boardName={currentView === 'boards' ? activeBoard.name : undefined}
         onProjectHome={() => {
           // Navigate to project home
+          setSidebarView('projects');
           setCurrentView('project-home');
           console.log('Navigate to project home');
         }}
         onShowAllBoards={() => {
           // Show all boards for the current project
+          setSidebarView('projects');
           setCurrentView('boards');
           console.log('Show all boards');
         }}
         onShowDashboard={() => {
           // Show dashboard for the current project
+          setSidebarView('projects');
           setCurrentView('dashboard');
           console.log('Show dashboard');
         }}
@@ -3876,6 +5642,8 @@ const GlassDashboardPage: React.FC = () => {
           }}
           onAddBoard={addBoardToProject}
           onCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          sidebarView={sidebarView}
+          setSidebarView={setSidebarView}
         />
         )}
 
@@ -3897,31 +5665,62 @@ const GlassDashboardPage: React.FC = () => {
 
         {/* Main Content */}
         <div className="flex-1 min-w-0 overflow-hidden">
-          <div className="mx-auto max-w-7xl px-4 py-6">
-            {currentView === 'dashboard' ? (
-              <DashboardScreen projectName={activeProject?.name || 'Project'} />
-            ) : currentView === 'project-home' ? (
-              <ProjectHomeScreen 
-                projectName={activeProject?.name || 'Project'} 
-                boards={boards}
-                onSelectBoard={(boardId) => {
-                  setActiveBoardId(boardId);
+          {sidebarView === 'mytasks' ? (
+            <div className="h-full pt-16"> {/* Added pt-16 to account for top nav bar */}
+              <MyTasksPage 
+                workspace={activeWs} 
+                currentUserId="1" // Replace with actual current user ID
+                kanbanBoards={kanbanBoards}
+                onTaskClick={(task) => {
+                  // Navigate to the task's project and board
+                  setActiveProjectId(task.projectId);
+                  setActiveBoardId(task.boardId);
+                  setSidebarView('projects');
                   setCurrentView('boards');
                 }}
               />
-            ) : (
-              <BoardScreen
-                board={activeBoard}
-                boards={boards}
-                onSelectBoard={setActiveBoardId}
-                onAddBoard={addBoard}
-                pinnedIds={pinnedBoardIds}
-                onTogglePin={togglePinBoard}
-                onRenameBoard={renameBoard}
-                onDeleteBoard={deleteBoard}
+            </div>
+          ) : sidebarView === 'chat' ? (
+            <div className="h-full pt-16"> {/* Added pt-16 to account for top nav bar */}
+              <ChatPage 
+                workspace={activeWs} 
+                currentUserId="1" // Replace with actual current user ID
               />
-            )}
-          </div>
+            </div>
+          ) : sidebarView === 'ai' ? (
+            <div className="h-full pt-16"> {/* Added pt-16 to account for top nav bar */}
+              <MindSyncAIPage 
+                workspace={activeWs} 
+                currentUserId="1" // Replace with actual current user ID
+              />
+            </div>
+          ) : (
+            <div className="mx-auto max-w-7xl px-4 py-6">
+              {currentView === 'dashboard' ? (
+                <DashboardScreen projectName={activeProject?.name || 'Project'} />
+              ) : currentView === 'project-home' ? (
+                <ProjectHomeScreen 
+                  projectName={activeProject?.name || 'Project'} 
+                  boards={boards}
+                  onSelectBoard={(boardId) => {
+                    setActiveBoardId(boardId);
+                    setCurrentView('boards');
+                  }}
+                />
+              ) : (
+                <BoardScreen
+                  board={activeBoard}
+                  boards={boards}
+                  onSelectBoard={setActiveBoardId}
+                  onAddBoard={addBoard}
+                  pinnedIds={pinnedBoardIds}
+                  onTogglePin={togglePinBoard}
+                  onRenameBoard={renameBoard}
+                  onDeleteBoard={deleteBoard}
+                />
+              )}
+            </div>
+          )}
         </div>
       </div>
 
